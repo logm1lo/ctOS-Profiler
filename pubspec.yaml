@@ -1,0 +1,36 @@
+name: ct_os
+description: A cyberpunk hacker aesthetic face recognition app.
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  camera: ^0.10.5
+  face_detection_tflite: ^5.0.13
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  riverpod: ^2.4.9
+  flutter_riverpod: ^2.4.9
+  image: ^4.1.3
+  image_picker: ^1.0.7
+  path: ^1.8.3
+  file_picker: ^6.1.1
+  shared_preferences: ^2.5.5
+
+dependency_overrides:
+  file_picker:
+    path: packages/file_picker-6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+#  assets:
+#    - assets/models/facenet.tflite
+#    - assets/models/mobile_face_net.tflite

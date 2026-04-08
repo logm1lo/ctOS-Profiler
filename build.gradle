@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application' version '8.3.2' apply false
+    id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
+    id 'flutter-mock' apply false
+}
+
+subprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://storage.googleapis.com/download.flutter.io")
+        }
+    }
+
+    if (project.name != "app") {
+        apply plugin: 'flutter-mock'
+    }
+    
+    configurations.all {
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'androidx.core' && details.requested.name == 'core-ktx') {
+                details.useVersion '1.13.1'
+            }
+            if (details.requested.group == 'androidx.core' && details.requested.name == 'core') {
+                details.useVersion '1.13.1'
+            }
+            if (details.requested.group == 'androidx.activity' && details.requested.name == 'activity') {
+                details.useVersion '1.9.3'
+            }
+            if (details.requested.group == 'androidx.lifecycle' && (details.requested.name.startsWith('lifecycle-'))) {
+                details.useVersion '2.8.7'
+            }
+        }
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://storage.googleapis.com/download.flutter.io")
+        }
+    }
+}

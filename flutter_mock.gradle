@@ -1,0 +1,12 @@
+class FlutterMock {
+    int compileSdkVersion = 35
+    int minSdkVersion = 24
+    int targetSdkVersion = 35
+    String ndkVersion = "25.1.8937393"
+}
+
+subprojects {
+    if (name != "app") {
+        project.extensions.create("flutter", FlutterMock)
+    }
+}

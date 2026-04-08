@@ -1,0 +1,23 @@
+plugins {
+    id 'groovy'
+    id 'java-gradle-plugin'
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation localGroovy()
+    implementation gradleApi()
+}
+
+gradlePlugin {
+    plugins {
+        flutterMock {
+            id = 'flutter-mock'
+            implementationClass = 'FlutterMockPlugin'
+        }
+    }
+}
