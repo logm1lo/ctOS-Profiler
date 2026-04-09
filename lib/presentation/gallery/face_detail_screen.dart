@@ -101,9 +101,7 @@ class FaceDetailScreen extends ConsumerWidget {
                 BoxShadow(color: accentColor.withValues(alpha: 0.3), blurRadius: 10)
             ],
           ),
-          child: currentFace.photoPath.isNotEmpty
-              ? Image.file(File(currentFace.photoPath), fit: BoxFit.cover)
-              : Icon(Icons.person, color: accentColor, size: 60),
+          child: _buildFaceImage(currentFace, accentColor),
         ),
         const SizedBox(width: 20),
         Expanded(
@@ -276,6 +274,16 @@ class FaceDetailScreen extends ConsumerWidget {
     } else {
       final lbs = weightKg * 2.20462;
       return "${lbs.toStringAsFixed(1)} LBS";
+    }
+  }
+
+  Widget _buildFaceImage(FaceEntity face, Color accentColor) {
+    if (face.photoPath.isNotEmpty && File(face.photoPath).existsSync()) {
+      return Image.file(File(face.photoPath), fit: BoxFit.cover);
+    } else if (face.photoBytes != null && face.photoBytes!.isNotEmpty) {
+      return Image.memory(face.photoBytes!, fit: BoxFit.cover);
+    } else {
+      return Icon(Icons.person, color: accentColor, size: 60);
     }
   }
 }

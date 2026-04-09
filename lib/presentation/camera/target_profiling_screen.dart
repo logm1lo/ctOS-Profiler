@@ -475,6 +475,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
       embedding: widget.embedding,
       modelUsed: widget.existingFace?.modelUsed ?? ref.read(cameraProvider).modelType.name,
       photoPath: widget.imageFile.path,
+      photoBytes: await widget.imageFile.readAsBytes(),
       timestamp: widget.existingFace?.timestamp ?? DateTime.now().millisecondsSinceEpoch,
       age: int.tryParse(_ageController.text),
       occupation: _occupationController.text,

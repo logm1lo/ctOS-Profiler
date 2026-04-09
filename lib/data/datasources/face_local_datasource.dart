@@ -18,7 +18,7 @@ class FaceLocalDataSource {
     final path = join(await getDatabasesPath(), 'ctos_faces.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (db, version) {
         return db.execute(
           '''
@@ -28,6 +28,7 @@ class FaceLocalDataSource {
             embedding TEXT,
             model_used TEXT,
             photo_path TEXT,
+            photo_bytes BLOB,
             timestamp INTEGER,
             age INTEGER,
             occupation TEXT,
@@ -60,6 +61,9 @@ class FaceLocalDataSource {
           _addColumnIfNotExists(db, 'registered_faces', 'birth_date', 'TEXT');
           _addColumnIfNotExists(db, 'registered_faces', 'height', 'REAL');
           _addColumnIfNotExists(db, 'registered_faces', 'weight', 'REAL');
+        }
+        if (oldVersion < 5) {
+          _addColumnIfNotExists(db, 'registered_faces', 'photo_bytes', 'BLOB');
         }
       },
     );

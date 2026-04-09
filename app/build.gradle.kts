@@ -28,17 +28,39 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // SAFE SIZE REDUCTION: Only include English resources. 
+        // This strips hundreds of unused localized strings from libraries.
+        resourceConfigurations += "en"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // SAFE SIZE REDUCTION: Enable shrinking but use "safe" ProGuard rules.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
+    }
+
+    packaging {
+        jniLibs {
+            // Do not extract native libraries, keep them compressed in the APK
+            // and load them directly. This reduces installation size.
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
+    androidResources {
+        // Do not compress TFLite models. This allows them to be memory-mapped
+        // directly from the APK, which reduces memory usage at runtime.
+        noCompress += "tflite"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -57,6 +79,12 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.play.feature.delivery)
+    implementation(libs.play.core.common)
+    implementation(libs.play.feature.delivery)
+    implementation(libs.play.core.common)
+    implementation(libs.play.feature.delivery)
+    implementation(libs.play.core.common)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

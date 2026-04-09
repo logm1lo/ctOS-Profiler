@@ -1,9 +1,12 @@
+import 'dart:typed_data';
+
 class FaceEntity {
   final int? id;
   final String name;
   final List<double> embedding;
   final String modelUsed;
   final String photoPath;
+  final Uint8List? photoBytes;
   final int timestamp;
 
   // New Watch Dogs style profiling data
@@ -22,6 +25,7 @@ class FaceEntity {
     required this.embedding,
     required this.modelUsed,
     required this.photoPath,
+    this.photoBytes,
     required this.timestamp,
     this.age,
     this.occupation,
@@ -40,6 +44,7 @@ class FaceEntity {
       'embedding': embedding.join(','),
       'model_used': modelUsed,
       'photo_path': photoPath,
+      'photo_bytes': photoBytes,
       'timestamp': timestamp,
       'age': age,
       'occupation': occupation,
@@ -61,6 +66,7 @@ class FaceEntity {
         : (map['embedding'] as List).cast<double>(),
       modelUsed: map['model_used'] ?? '',
       photoPath: map['photo_path'] ?? '',
+      photoBytes: map['photo_bytes'],
       timestamp: map['timestamp'] ?? 0,
       age: map['age'],
       occupation: map['occupation'],

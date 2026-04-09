@@ -89,9 +89,7 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
                                   decoration: BoxDecoration(
                                     border: Border.all(color: accentColor),
                                   ),
-                                  child: face.photoPath.isNotEmpty
-                                      ? Image.file(File(face.photoPath), fit: BoxFit.cover)
-                                      : Icon(Icons.person, color: accentColor, size: 40),
+                                  child: _buildFaceImage(face, accentColor),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
@@ -157,6 +155,16 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildFaceImage(face, Color accentColor) {
+    if (face.photoPath.isNotEmpty && File(face.photoPath).existsSync()) {
+      return Image.file(File(face.photoPath), fit: BoxFit.cover);
+    } else if (face.photoBytes != null && face.photoBytes!.isNotEmpty) {
+      return Image.memory(face.photoBytes!, fit: BoxFit.cover);
+    } else {
+      return Icon(Icons.person, color: accentColor, size: 40);
+    }
   }
 
   void _showExportImportDialog(BuildContext context, AppTheme theme, Color accentColor, Color backgroundColor, Color textColor) {
