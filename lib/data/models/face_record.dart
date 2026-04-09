@@ -3,37 +3,23 @@ import '../../domain/entities/face_entity.dart';
 
 class FaceRecord extends FaceEntity {
   FaceRecord({
-    int? id,
-    required String name,
-    required List<double> embedding,
-    required String modelUsed,
-    required String photoPath,
-    required int timestamp,
-    int? age,
-    String? occupation,
-    String? incomeLevel,
-    int? riskScore,
-    List<String>? personalityTraits,
-    String? birthDate,
-    double? height,
-    double? weight,
-  }) : super(
-          id: id,
-          name: name,
-          embedding: embedding,
-          modelUsed: modelUsed,
-          photoPath: photoPath,
-          timestamp: timestamp,
-          age: age,
-          occupation: occupation,
-          incomeLevel: incomeLevel,
-          riskScore: riskScore,
-          personalityTraits: personalityTraits,
-          birthDate: birthDate,
-          height: height,
-          weight: weight,
-        );
+    super.id,
+    required super.name,
+    required super.embedding,
+    required super.modelUsed,
+    required super.photoPath,
+    required super.timestamp,
+    super.age,
+    super.occupation,
+    super.incomeLevel,
+    super.riskScore,
+    super.personalityTraits,
+    super.birthDate,
+    super.height,
+    super.weight,
+  });
 
+  @override
   Map<String, dynamic> toMap() {
     return {
       'id': id,

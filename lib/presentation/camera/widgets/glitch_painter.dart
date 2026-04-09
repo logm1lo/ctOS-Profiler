@@ -25,18 +25,18 @@ class GlitchPainter extends CustomPainter {
       // Randomly choose between cyan, white, or transparent
       final colorRoll = _random.nextDouble();
       if (colorRoll > 0.7) {
-        paint.color = AppColors.cyanAccent.withOpacity(0.3);
+        paint.color = AppColors.cyanAccent.withValues(alpha: 0.3);
       } else if (colorRoll > 0.4) {
-        paint.color = Colors.white.withOpacity(0.1);
+        paint.color = Colors.white.withValues(alpha: 0.1);
       } else {
-        paint.color = Colors.black.withOpacity(0.2);
+        paint.color = Colors.black.withValues(alpha: 0.2);
       }
 
       canvas.drawRect(Rect.fromLTWH(x, y, glitchWidth, glitchHeight), paint);
 
       // Optional: draw a second "offset" version for RGB split feel
       if (_random.nextBool()) {
-        paint.color = Colors.redAccent.withOpacity(0.1);
+        paint.color = Colors.redAccent.withValues(alpha: 0.1);
         canvas.drawRect(Rect.fromLTWH(x + 2, y + 1, glitchWidth, glitchHeight), paint);
       }
     }

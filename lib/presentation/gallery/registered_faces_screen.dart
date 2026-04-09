@@ -1,13 +1,10 @@
-import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path/path.dart' as p;
 import '../../core/providers/settings_provider.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/text_styles.dart';
-import '../../domain/entities/face_entity.dart';
 import '../../data/datasources/face_local_datasource.dart';
 import '../../data/repositories/face_repository_impl.dart';
 import 'face_detail_screen.dart';
@@ -81,7 +78,7 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              border: Border.all(color: accentColor.withOpacity(0.5)),
+                              border: Border.all(color: accentColor.withValues(alpha: 0.5)),
                               color: surfaceColor,
                             ),
                             child: Row(
@@ -103,8 +100,8 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
                                     children: [
                                       Text(face.name.toUpperCase(), style: AppTextStyles.body(theme).copyWith(color: accentColor, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 4),
-                                      Text('MODEL: ${face.modelUsed.toUpperCase()}', style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor.withOpacity(0.7))),
-                                      Text('DATE: ${DateTime.fromMillisecondsSinceEpoch(face.timestamp).toString().split('.')[0]}', style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor.withOpacity(0.7))),
+                                      Text('MODEL: ${face.modelUsed.toUpperCase()}', style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor.withValues(alpha: 0.7))),
+                                      Text('DATE: ${DateTime.fromMillisecondsSinceEpoch(face.timestamp).toString().split('.')[0]}', style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor.withValues(alpha: 0.7))),
                                     ],
                                   ),
                                 ),
@@ -142,7 +139,7 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
               style: TextStyle(color: textColor, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 hintText: 'SEARCH_DATABASE...',
-                hintStyle: TextStyle(color: accentColor.withOpacity(0.3)),
+                hintStyle: TextStyle(color: accentColor.withValues(alpha: 0.3)),
                 prefixIcon: Icon(Icons.search, color: accentColor),
                 suffixIcon: IconButton(
                   icon: Icon(Icons.clear, color: accentColor),
@@ -151,7 +148,7 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
                     ref.read(facesProvider.notifier).setSearchQuery('');
                   },
                 ),
-                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: accentColor.withOpacity(0.5))),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: accentColor.withValues(alpha: 0.5))),
                 focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: accentColor)),
               ),
               onChanged: (value) => ref.read(facesProvider.notifier).setSearchQuery(value),
@@ -190,7 +187,8 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
                     bytes: bytes,
                   );
 
-                    if (result != null && context.mounted) {
+                  if (result != null) {
+                    if (context.mounted) {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -200,6 +198,7 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
                         ),
                       );
                     }
+                  }
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

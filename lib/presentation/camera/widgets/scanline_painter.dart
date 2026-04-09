@@ -13,7 +13,7 @@ class ScanlinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final baseColor = color ?? AppColors.cyanAccent;
     final paint = Paint()
-      ..color = baseColor.withOpacity(0.4)
+      ..color = baseColor.withValues(alpha: 0.4)
       ..strokeWidth = 2.0;
 
     // Main scanning line
@@ -31,7 +31,7 @@ class ScanlinePainter extends CustomPainter {
     for (int i = 1; i <= 8; i++) {
       double trailingY = (y - (i * 15)) % size.height;
       double opacity = (0.2 / i) * (1.0 + _random.nextDouble() * 0.2);
-      paint.color = baseColor.withOpacity(opacity.clamp(0.0, 1.0));
+      paint.color = baseColor.withValues(alpha: opacity.clamp(0.0, 1.0));
       paint.strokeWidth = 1.0;
       canvas.drawLine(Offset(0, trailingY), Offset(size.width, trailingY), paint);
     }
@@ -43,7 +43,7 @@ class ScanlinePainter extends CustomPainter {
       final burstOpacity = _random.nextDouble() * 0.2;
       canvas.drawRect(
         Rect.fromLTWH(0, burstY, size.width, burstHeight),
-        Paint()..color = baseColor.withOpacity(burstOpacity),
+        Paint()..color = baseColor.withValues(alpha: burstOpacity),
       );
     }
   }

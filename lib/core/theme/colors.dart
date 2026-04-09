@@ -61,7 +61,7 @@ class AppColors {
       case AppTheme.whiteBlack: return lightGreyWB;
     }
   }
-  static Color getScanLine(AppTheme theme) => (theme == AppTheme.neonBlack ? cyanAccent : secondaryWD).withOpacity(0.3);
+  static Color getScanLine(AppTheme theme) => (theme == AppTheme.neonBlack ? cyanAccent : secondaryWD).withValues(alpha: 0.3);
 
   // Constants (for now, will refactor to use getters)
   static const Color background = Color(0xFF0A0A0A);

@@ -16,6 +16,34 @@ subprojects {
     if (project.name != "app") {
         apply plugin: 'flutter-mock'
     }
+
+    // Fix for flutter_litert missing kotlin-android plugin
+    if (project.name == "flutter_litert") {
+        apply plugin: 'org.jetbrains.kotlin.android'
+    }
+
+    // Force consistent JVM target for all projects to avoid build failures
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = "17"
+        }
+    }
+
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+        // Also handle cases where JavaCompile tasks are created
+        tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = '17'
+            targetCompatibility = '17'
+        }
+    }
     
     configurations.all {
         resolutionStrategy.eachDependency { DependencyResolveDetails details ->

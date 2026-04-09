@@ -18,7 +18,7 @@ class CtOSApp extends StatelessWidget {
         colorScheme: const ColorScheme.dark(
           primary: AppColors.cyanAccent,
           secondary: AppColors.cyanAccent,
-          background: AppColors.background,
+          surface: AppColors.background,
         ),
       ),
       home: const HomeScreen(),

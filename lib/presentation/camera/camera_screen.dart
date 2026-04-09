@@ -33,7 +33,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
       height: 40,
       decoration: BoxDecoration(
         border: Border.all(color: accentColor, width: 1),
-        color: (theme == AppTheme.neonBlack ? Colors.black : Colors.white).withOpacity(0.5),
+        color: (theme == AppTheme.neonBlack ? Colors.black : Colors.white).withValues(alpha: 0.5),
       ),
       child: Stack(
         children: [
@@ -46,7 +46,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
             child: Container(
               width: 120,
               height: 40,
-              color: accentColor.withOpacity(0.3),
+              color: accentColor.withValues(alpha: 0.3),
             ),
           ),
           Row(
@@ -214,7 +214,7 @@ class _IconButton extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: accentColor, width: 1),
-        color: accentColor.withOpacity(0.1),
+        color: accentColor.withValues(alpha: 0.1),
       ),
       child: IconButton(
         icon: Icon(icon, color: accentColor),
@@ -246,7 +246,7 @@ class _ShutterButton extends ConsumerWidget {
           boxShadow: [
             if (settings.theme == AppTheme.neonBlack)
               BoxShadow(
-                color: accentColor.withOpacity(0.5),
+                color: accentColor.withValues(alpha: 0.5),
                 blurRadius: 15,
                 spreadRadius: 2,
               ),

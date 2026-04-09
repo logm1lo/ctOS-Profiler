@@ -21,8 +21,7 @@ class ScanProgressOverlay extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final theme = settings.theme;
     final accentColor = AppColors.getAccent(theme);
-    final backgroundColor = (theme == AppTheme.neonBlack ? Colors.black : Colors.white).withOpacity(0.8);
-    final textColor = AppColors.getText(theme);
+    final backgroundColor = (theme == AppTheme.neonBlack ? Colors.black : Colors.white).withValues(alpha: 0.8);
 
     return Container(
       color: backgroundColor,
@@ -40,7 +39,7 @@ class ScanProgressOverlay extends ConsumerWidget {
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.getSurface(theme),
-                border: Border.all(color: accentColor.withOpacity(0.3)),
+                border: Border.all(color: accentColor.withValues(alpha: 0.3)),
               ),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
@@ -51,7 +50,7 @@ class ScanProgressOverlay extends ConsumerWidget {
                     boxShadow: [
                       if (theme == AppTheme.neonBlack)
                         BoxShadow(
-                          color: accentColor.withOpacity(0.5),
+                          color: accentColor.withValues(alpha: 0.5),
                           blurRadius: 4,
                           spreadRadius: 1,
                         ),
