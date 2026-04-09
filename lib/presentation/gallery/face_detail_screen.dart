@@ -84,17 +84,7 @@ class FaceDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildBackground() {
-    return Opacity(
-      opacity: 0.05,
-      child: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/grid_bg.png'),
-            repeat: ImageRepeat.repeat,
-          ),
-        ),
-      ),
-    );
+    return Container();
   }
 
   Widget _buildProfileHeader(BuildContext context, FaceEntity currentFace, AppTheme theme, Color accentColor) {
@@ -108,7 +98,7 @@ class FaceDetailScreen extends ConsumerWidget {
             border: Border.all(color: accentColor, width: 2),
             boxShadow: [
               if (theme == AppTheme.neonBlack)
-                BoxShadow(color: accentColor.withOpacity(0.3), blurRadius: 10)
+                BoxShadow(color: accentColor.withValues(alpha: 0.3), blurRadius: 10)
             ],
           ),
           child: currentFace.photoPath.isNotEmpty
@@ -132,11 +122,11 @@ class FaceDetailScreen extends ConsumerWidget {
                     IconButton(
                     icon: Icon(Icons.edit, color: accentColor, size: 20),
                     onPressed: () {
-                      final size = const Size(100, 100);
+                      const size = Size(100, 100);
                       final detection = fdt.Detection(
                         boundingBox: const fdt.RectF(0, 0, 1, 1),
                         score: 1.0,
-                        keypointsXY: List.filled(12, 0.0), // 6 landmarks * 2 (x,y)
+                        keypointsXY: const [0,0,0,0,0,0,0,0,0,0,0,0], // 6 landmarks * 2 (x,y)
                         imageSize: size,
                       );
 
@@ -165,8 +155,8 @@ class FaceDetailScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.1),
-                  border: Border.all(color: accentColor.withOpacity(0.5)),
+                  color: accentColor.withValues(alpha: 0.1),
+                  border: Border.all(color: accentColor.withValues(alpha: 0.5)),
                 ),
                 child: Text(
                   'ID: ${currentFace.id ?? "NEW_TARGET"}',
@@ -195,8 +185,8 @@ class FaceDetailScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: surfaceColor.withOpacity(0.5),
-            border: Border(left: BorderSide(color: accentColor.withOpacity(0.3), width: 1)),
+            color: surfaceColor.withValues(alpha: 0.5),
+            border: Border(left: BorderSide(color: accentColor.withValues(alpha: 0.3), width: 1)),
           ),
           child: Column(children: children),
         ),
@@ -240,8 +230,8 @@ class FaceDetailScreen extends ConsumerWidget {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                border: Border.all(color: accentColor.withOpacity(0.5)),
-                color: accentColor.withOpacity(0.05),
+                border: Border.all(color: accentColor.withValues(alpha: 0.5)),
+                color: accentColor.withValues(alpha: 0.05),
               ),
               child: Text(
                 trait.toUpperCase(),

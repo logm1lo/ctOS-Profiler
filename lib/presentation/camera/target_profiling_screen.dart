@@ -206,7 +206,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
       padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: Text(
         title,
-        style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor.withOpacity(0.7), fontSize: 12, letterSpacing: 2),
+        style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor.withValues(alpha: 0.7), fontSize: 12, letterSpacing: 2),
       ),
     );
   }
@@ -256,7 +256,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
         width: 100,
         height: 120,
         decoration: BoxDecoration(
-          border: Border.all(color: accentColor.withOpacity(0.3), width: 1),
+          border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1),
         ),
       ),
     );
@@ -308,7 +308,6 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
                       surface: theme == AppTheme.whiteBlack ? Colors.white : Colors.black,
                       onSurface: textColor,
                     ),
-                    dialogBackgroundColor: theme == AppTheme.whiteBlack ? Colors.white : Colors.black,
                   ),
                   child: child!,
                 ),
@@ -335,7 +334,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
   }
 
   Widget _buildRiskSlider(AppTheme theme, Color accentColor) {
-    final highRiskColor = Colors.red;
+    const highRiskColor = Colors.red;
     final isHighRisk = _riskScore > 70;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +343,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('THREAT LEVEL', style: AppTextStyles.hudStatus(theme).copyWith(color: Colors.grey, fontSize: 10)),
-            Text('${_riskScore}%', style: TextStyle(
+            Text('$_riskScore%', style: TextStyle(
               color: isHighRisk ? highRiskColor : accentColor,
               fontWeight: FontWeight.bold,
               fontFamily: 'monospace'
@@ -357,7 +356,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
           max: 100,
           onChanged: (v) => setState(() => _riskScore = v.toInt()),
           activeColor: isHighRisk ? highRiskColor : accentColor,
-          inactiveColor: Colors.grey.withOpacity(0.2),
+          inactiveColor: Colors.grey.withValues(alpha: 0.2),
         ),
       ],
     );
@@ -367,7 +366,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: TextStyle(color: activeColor.withOpacity(0.5), fontSize: 10, fontFamily: 'monospace')),
+        Text(title, style: TextStyle(color: activeColor.withValues(alpha: 0.5), fontSize: 10, fontFamily: 'monospace')),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -387,8 +386,8 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: isSelected ? activeColor.withOpacity(0.2) : Colors.transparent,
-                  border: Border.all(color: isSelected ? activeColor : Colors.grey.withOpacity(0.3)),
+                  color: isSelected ? activeColor.withValues(alpha: 0.2) : Colors.transparent,
+                  border: Border.all(color: isSelected ? activeColor : Colors.grey.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   trait.toUpperCase(),
@@ -434,7 +433,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
           color: accentColor,
           boxShadow: [
             if (theme == AppTheme.neonBlack)
-              BoxShadow(color: accentColor.withOpacity(0.5), blurRadius: 10)
+              BoxShadow(color: accentColor.withValues(alpha: 0.5), blurRadius: 10)
           ],
         ),
         child: Center(

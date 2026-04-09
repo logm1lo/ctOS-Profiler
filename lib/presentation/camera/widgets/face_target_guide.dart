@@ -38,7 +38,7 @@ class FaceTargetGuide extends ConsumerWidget {
                 child: Text(
                   'POSITION FACE HERE',
                   style: AppTextStyles.hudStatus(theme).copyWith(
-                    color: accentColor.withOpacity(animation.value),
+                    color: accentColor.withValues(alpha: animation.value),
                   ),
                 ),
               ),
@@ -80,7 +80,7 @@ class TargetOvalPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(opacity * 0.5)
+      ..color = color.withValues(alpha: opacity * 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
@@ -113,7 +113,7 @@ class CornerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(opacity)
+      ..color = color.withValues(alpha: opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
 

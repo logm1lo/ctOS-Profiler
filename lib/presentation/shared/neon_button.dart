@@ -22,7 +22,7 @@ class NeonButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final accentColor = AppColors.getAccent(settings.theme);
-    final backgroundColor = isSecondary ? Colors.transparent : accentColor.withOpacity(0.1);
+    final backgroundColor = isSecondary ? Colors.transparent : accentColor.withValues(alpha: 0.1);
 
     return GestureDetector(
       onTap: onPressed,
@@ -37,7 +37,7 @@ class NeonButton extends ConsumerWidget {
           boxShadow: [
             if (!isSecondary && settings.theme == AppTheme.neonBlack)
               BoxShadow(
-                color: accentColor.withOpacity(0.3),
+                color: accentColor.withValues(alpha: 0.3),
                 blurRadius: 8,
                 spreadRadius: 1,
               ),

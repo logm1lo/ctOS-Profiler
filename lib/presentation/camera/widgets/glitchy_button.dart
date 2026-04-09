@@ -75,11 +75,11 @@ class _GlitchyButtonState extends ConsumerState<GlitchyButton> with SingleTicker
             if (_isGlitching) ...[
               Transform.translate(
                 offset: Offset(offset, 0),
-                child: _buildButton(context, accentColor.withOpacity(0.3), theme, accentColor),
+                child: _buildButton(context, accentColor.withValues(alpha: 0.3), theme, accentColor),
               ),
               Transform.translate(
                 offset: Offset(-offset, 0),
-                child: _buildButton(context, secondaryColor.withOpacity(0.3), theme, accentColor),
+                child: _buildButton(context, secondaryColor.withValues(alpha: 0.3), theme, accentColor),
               ),
             ],
             Opacity(
@@ -93,11 +93,11 @@ class _GlitchyButtonState extends ConsumerState<GlitchyButton> with SingleTicker
   }
 
   Widget _buildButton(BuildContext context, Color overlayColor, AppTheme theme, Color accentColor) {
-    final baseColor = overlayColor.alpha > 0 ? overlayColor : accentColor;
+    final baseColor = overlayColor.a > 0 ? overlayColor : accentColor;
     return OutlinedButton(
       onPressed: widget.onPressed,
       style: OutlinedButton.styleFrom(
-        backgroundColor: accentColor.withOpacity(0.1).withAlpha((overlayColor.alpha > 0) ? overlayColor.alpha : 25),
+        backgroundColor: accentColor.withValues(alpha: 0.1).withAlpha((overlayColor.a * 255.0).round().clamp(0, 255) > 0 ? (overlayColor.a * 255.0).round().clamp(0, 255) : 25),
         side: BorderSide(color: baseColor, width: 2),
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

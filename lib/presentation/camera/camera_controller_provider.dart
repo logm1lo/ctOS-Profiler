@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -226,12 +225,14 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
       _lastProcessTime = stopwatch.elapsedMilliseconds.toDouble();
       _fps = 1000 / _lastProcessTime;
 
+    if (mounted) {
       state = state.copyWith(
         detectedFaces: faces,
         isProcessing: false,
         processTime: _lastProcessTime,
         fps: _fps,
       );
+    }
 
       if (state.captureMethod == CaptureMethod.live && faces.isNotEmpty) {
         _handleLiveMatching(faces, rotated, bytes);
@@ -316,7 +317,9 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
         // Let's update the state so the HUD can show a "NEW TARGET" prompt.
         state = state.copyWith(matchedFace: null, scanStatus: 'NEW TARGET DETECTED', clearMatchedFace: true);
       } else {
+      if (mounted) {
         state = state.copyWith(matchedFace: match, scanStatus: 'MATCH FOUND', clearMatchedFace: false);
+      }
       }
     } catch (e) {
       debugPrint('Live match error: $e');
@@ -340,9 +343,13 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
       }
 
       final XFile photo = await state.controller!.takePicture();
-      await _processFile(File(photo.path), context);
+      if (context.mounted) {
+        await _processFile(File(photo.path), context);
+      }
     } catch (e) {
-      state = state.copyWith(isScanning: false, scanStatus: 'ERROR: $e');
+      if (context.mounted) {
+        state = state.copyWith(isScanning: false, scanStatus: 'ERROR: $e');
+      }
     }
   }
 
@@ -362,9 +369,13 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     );
 
     try {
-      await _processFile(File(image.path), context);
+      if (context.mounted) {
+        await _processFile(File(image.path), context);
+      }
     } catch (e) {
-      state = state.copyWith(isScanning: false, scanStatus: 'ERROR: $e');
+      if (context.mounted) {
+        state = state.copyWith(isScanning: false, scanStatus: 'ERROR: $e');
+      }
     }
   }
 
@@ -405,9 +416,13 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
 
     if (state.mode == AppMode.match) {
       final match = await _matchFace.execute(embedding, state.modelType.name);
-      state = state.copyWith(scanProgress: 1.0, scanStatus: 'DONE', matchedFace: match);
+      if (mounted) {
+        state = state.copyWith(scanProgress: 1.0, scanStatus: 'DONE', matchedFace: match);
+      }
       await Future.delayed(const Duration(seconds: 3));
-      state = state.copyWith(isScanning: false);
+      if (mounted) {
+        state = state.copyWith(isScanning: false);
+      }
     } else {
       // Move file to permanent storage
       final directory = await getApplicationDocumentsDirectory();
@@ -432,35 +447,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  Future<String?> _showNameDialog(BuildContext context) async {
-    String name = '';
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.black,
-        title: const Text('REGISTER TARGET', style: TextStyle(color: Colors.cyanAccent)),
-        content: TextField(
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Enter name',
-            hintStyle: TextStyle(color: Colors.grey),
-            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.cyanAccent)),
-          ),
-          onChanged: (value) => name = value,
-        ),
-        actions: [
-          TextButton(
-            child: const Text('CANCEL', style: TextStyle(color: Colors.amber)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text('SAVE', style: TextStyle(color: Colors.cyanAccent)),
-            onPressed: () => Navigator.pop(context, name),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   @override
   void dispose() {

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import '../../core/utils/similarity.dart';
 import '../../domain/entities/face_entity.dart';
 import '../../domain/repositories/face_repository.dart';
@@ -29,10 +30,10 @@ class FaceRepositoryImpl implements FaceRepository {
     double maxSimilarity = -1.0;
     const double threshold = 0.6;
 
-    print('Matching face... total records: ${filteredFaces.length}');
+    developer.log('Matching face... total records: ${filteredFaces.length}');
     for (var face in filteredFaces) {
       double similarity = SimilarityUtils.cosineSimilarity(embedding, face.embedding);
-      print('Comparing with ${face.name}: similarity = $similarity');
+      developer.log('Comparing with ${face.name}: similarity = $similarity');
       if (similarity > maxSimilarity) {
         maxSimilarity = similarity;
         bestMatch = face;
@@ -40,10 +41,10 @@ class FaceRepositoryImpl implements FaceRepository {
     }
 
     if (maxSimilarity >= threshold) {
-      print('Match found! Name: ${bestMatch?.name}, Similarity: $maxSimilarity');
+      developer.log('Match found! Name: ${bestMatch?.name}, Similarity: $maxSimilarity');
       return bestMatch;
     }
-    print('No match found. Best similarity: $maxSimilarity (threshold: $threshold)');
+    developer.log('No match found. Best similarity: $maxSimilarity (threshold: $threshold)');
     return null;
 
   }

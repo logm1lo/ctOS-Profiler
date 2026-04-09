@@ -165,7 +165,7 @@ class SettingsDialog extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('DATE FORMAT', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withOpacity(0.6))),
+              Text('DATE FORMAT', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6))),
               DropdownButton<DateFormatType>(
                 value: settings.dateFormat,
                 isExpanded: true,
@@ -178,7 +178,7 @@ class SettingsDialog extends ConsumerWidget {
                 onChanged: (val) => ref.read(settingsProvider.notifier).setDateFormat(val!),
               ),
               const SizedBox(height: 20),
-              Text('MEASUREMENT UNIT', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withOpacity(0.6))),
+              Text('MEASUREMENT UNIT', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6))),
               DropdownButton<MeasurementUnit>(
                 value: settings.measurementUnit,
                 isExpanded: true,
@@ -191,7 +191,7 @@ class SettingsDialog extends ConsumerWidget {
                 onChanged: (val) => ref.read(settingsProvider.notifier).setMeasurementUnit(val!),
               ),
               const SizedBox(height: 20),
-              Text('SYSTEM THEME', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withOpacity(0.6))),
+              Text('SYSTEM THEME', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6))),
               DropdownButton<AppTheme>(
                 value: settings.theme,
                 isExpanded: true,
@@ -209,7 +209,7 @@ class SettingsDialog extends ConsumerWidget {
               _buildSwitchTile('PRIVACY MODE (BLUR)', settings.privacyMode,
                 (_) => ref.read(settingsProvider.notifier).togglePrivacyMode(), theme, accentColor, textColor, ref),
               const SizedBox(height: 20),
-              Text('SHUTTER STYLE', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withOpacity(0.6))),
+              Text('SHUTTER STYLE', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6))),
               DropdownButton<ShutterStyle>(
                 value: settings.shutterStyle,
                 isExpanded: true,
@@ -250,7 +250,7 @@ class SettingsDialog extends ConsumerWidget {
         Expanded(
           child: Text(
             title,
-            style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withOpacity(0.6)),
+            style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6)),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -258,8 +258,8 @@ class SettingsDialog extends ConsumerWidget {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: activeColor,
-          activeTrackColor: activeColor.withOpacity(0.3),
+          activeThumbColor: activeColor,
+          activeTrackColor: activeColor.withValues(alpha: 0.3),
         ),
       ],
     );

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:face_detection_tflite/face_detection_tflite.dart' as fdt;
 import '../../../core/theme/colors.dart';
-import '../../../core/theme/text_styles.dart';
 import '../../../domain/entities/face_entity.dart';
 
 class FaceBBoxPainter extends CustomPainter {
@@ -34,7 +33,7 @@ class FaceBBoxPainter extends CustomPainter {
       ..color = activeColor;
 
     final blurPaint = Paint()
-      ..color = Colors.black.withOpacity(0.8)
+      ..color = Colors.black.withValues(alpha: 0.8)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
 
     for (final face in faces) {
@@ -66,11 +65,11 @@ class FaceBBoxPainter extends CustomPainter {
     final meshPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.5
-      ..color = color.withOpacity(0.4);
+      ..color = color.withValues(alpha: 0.4);
 
     final dotPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = color.withOpacity(0.6);
+      ..color = color.withValues(alpha: 0.6);
 
     // Scaling all points first
     final List<Offset> points = mesh.points.map((p) => _scalePoint(p, size, absoluteImageSize)).toList();
@@ -119,7 +118,7 @@ class FaceBBoxPainter extends CustomPainter {
 
         final irisPaint = Paint()
           ..style = PaintingStyle.fill
-          ..color = color.withOpacity(0.8);
+          ..color = color.withValues(alpha: 0.8);
 
         for (int i in [...leftIrisIndices, ...rightIrisIndices]) {
            canvas.drawCircle(points[i], 1.5, irisPaint);

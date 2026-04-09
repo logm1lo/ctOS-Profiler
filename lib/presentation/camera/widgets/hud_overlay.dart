@@ -9,13 +9,6 @@ import 'face_target_guide.dart';
 import 'scanline_painter.dart';
 import 'glitch_painter.dart';
 import 'glitchy_button.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:image/image.dart' as img;
-import '../../../core/utils/image_utils.dart';
-import '../../../core/utils/tflite_service.dart';
-import '../target_profiling_screen.dart';
 
 class HudOverlay extends ConsumerStatefulWidget {
   const HudOverlay({super.key});
@@ -104,7 +97,7 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: (theme == AppTheme.neonBlack ? Colors.black : Colors.white).withOpacity(0.7),
+                color: (theme == AppTheme.neonBlack ? Colors.black : Colors.white).withValues(alpha: 0.7),
                 border: Border.all(color: accentColor, width: 1.5),
               ),
               child: Text(
@@ -183,13 +176,13 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
               Container(
                 height: 1,
                 width: double.infinity,
-                color: accentColor.withOpacity(0.5),
+                color: accentColor.withValues(alpha: 0.5),
               ),
               if (settings.showDiagnostics) ...[
                 const SizedBox(height: 8),
                 Text(
                   'FPS: ${cameraState.fps.toStringAsFixed(1)} | PROC: ${cameraState.processTime.toInt()}ms',
-                  style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor.withOpacity(0.7)),
+                  style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor.withValues(alpha: 0.7)),
                 ),
               ],
             ],
