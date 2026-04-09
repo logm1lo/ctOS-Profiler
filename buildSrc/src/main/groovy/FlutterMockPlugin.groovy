@@ -7,7 +7,7 @@ class FlutterMockPlugin implements Plugin<Project> {
             project.extensions.create("flutter", FlutterMockExtension)
             
             project.afterEvaluate {
-                project.dependencies.add("implementation", "io.flutter:flutter_embedding_debug:1.0.0-425cfb54d01a9472b3e81d9e76fd63a4a44cfbcb")
+                project.dependencies.add("compileOnly", "io.flutter:flutter_embedding_debug:1.0.0-425cfb54d01a9472b3e81d9e76fd63a4a44cfbcb")
                 if (project.name != "flutter_plugin_android_lifecycle") {
                     project.dependencies.add("implementation", project.project(":flutter_plugin_android_lifecycle"))
                 }
