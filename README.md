@@ -51,8 +51,9 @@ flutter pub get
 ```
 
 3. Configuration:
+```bash
 Check `local.properties` in the `android/` folder to ensure your SDK and NDK paths are correct.
-
+```
 4. Run:
 ```bash
 flutter run
