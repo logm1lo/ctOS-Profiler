@@ -1,3 +1,5 @@
+![image](https://github.com/logm1lo/ctOS-Profiler/blob/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)
+
 # ctOS - Profiler
 
 ctOS - Profiler is a mobile application inspired by the Watch Dogs series, built with Flutter and LiteRT (TensorFlow Lite). It provides on-device face recognition and tracking with a focus on privacy and performance.

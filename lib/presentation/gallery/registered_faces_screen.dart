@@ -174,18 +174,25 @@ class _RegisteredFacesScreenState extends ConsumerState<RegisteredFacesScreen> {
               title: Text('EXPORT DATABASE', style: TextStyle(color: textColor, fontFamily: 'monospace')),
               onTap: () async {
                 try {
-                  final fileName = 'ctos_faces_backup_${DateTime.now().millisecondsSinceEpoch}.db';
                   final ds = FaceLocalDataSource();
-                  final dbPath = await ds.getDatabasePath();
-                  final dbFile = File(dbPath);
-                  final bytes = await dbFile.readAsBytes();
+                  // Use the robust export method which creates a consistent backup using VACUUM INTO.
+                  // This ensures that even data in the WAL file is included.
+                  final backupPath = await ds.exportDatabase();
+                  final backupFile = File(backupPath);
+                  final bytes = await backupFile.readAsBytes();
 
+                  final fileName = 'ctos_faces_backup_${DateTime.now().millisecondsSinceEpoch}.db';
                   // Use FilePicker to save to a specific file, which handles permissions better
                   final result = await FilePicker.platform.saveFile(
                     dialogTitle: 'Select where to save the database backup',
                     fileName: fileName,
                     bytes: bytes,
                   );
+
+                  // Cleanup the temporary internal backup file
+                  if (await backupFile.exists()) {
+                    await backupFile.delete();
+                  }
 
                   if (result != null) {
                     if (context.mounted) {

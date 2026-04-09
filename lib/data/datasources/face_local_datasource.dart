@@ -103,8 +103,34 @@ class FaceLocalDataSource {
   }
 
   Future<void> exportDatabaseToPath(String path) async {
-    final dbPath = await getDatabasePath();
-    await File(dbPath).copy(path);
+    // 1. Flush any pending changes to the WAL file
+    final db = await database;
+    try {
+      await db.execute('PRAGMA wal_checkpoint(FULL);');
+    } catch (e) {
+      // Ignore if PRAGMA fails, proceed with close/copy
+    }
+
+    // 2. Close the database to release all file locks and merge WAL
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+
+    try {
+      final dbPath = await getDatabasePath();
+      final sourceFile = File(dbPath);
+
+      if (await sourceFile.exists()) {
+        // 3. Perform the copy while the DB is closed
+        await sourceFile.copy(path);
+      } else {
+        throw Exception("Source database file not found at $dbPath");
+      }
+    } finally {
+      // 4. Re-open the database so the application can continue using it
+      _database = await _initDatabase();
+    }
   }
 
   Future<String> exportDatabase() async {
@@ -120,7 +146,11 @@ class FaceLocalDataSource {
       await _database!.close();
       _database = null;
     }
+    // Delete the database and auxiliary files (-wal, -shm) before copying
+    await deleteDatabase(dbPath);
     await File(path).copy(dbPath);
+    // Re-open to ensure the new data is loaded
+    _database = await _initDatabase();
   }
 
   Future<void> deleteFace(int id) async {

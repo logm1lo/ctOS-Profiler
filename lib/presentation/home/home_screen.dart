@@ -53,7 +53,7 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'ctOS v1.0',
+                          'ctOS v1.0.1',
                           style: TextStyle(
                             color: accentColor,
                             fontSize: 28,
