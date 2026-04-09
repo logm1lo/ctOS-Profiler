@@ -2,7 +2,7 @@
 
 # ctOS - Profiler
 
-ctOS - Profiler is a mobile application inspired by the Watch Dogs series, built with Flutter and LiteRT (TensorFlow Lite). It provides on-device face recognition and tracking with a focus on privacy and performance.
+ctOS - Profiler is a mobile application inspired by the Watch Dogs series, built with Flutter and LiteRT (TensorFlow Lite). It provides on-device face recognition and tracking.
 
 ## Table of Contents
 
@@ -18,18 +18,18 @@ ctOS - Profiler is a mobile application inspired by the Watch Dogs series, built
 
 ## Features
 
-* AI Face Detection: Real-time tracking and recognition using LiteRT.
-* Local Storage: Secure storage for face embeddings and logs via sqflite.
-* Native Bridge: High-performance camera handling and AI inference via JNI.
-* State Management: Reactive and predictable data flow using Riverpod.
+* **AI Face Detection:** Real-time tracking and recognition using LiteRT.
+* **Local Storage:** Secure storage for face embeddings and logs via sqflite.
+* **Native Bridge** High-performance camera handling and AI inference via JNI.
+* **State Management:** Reactive and predictable data flow using Riverpod.
 
 ## Tech Stack
 
-* Framework: Flutter
-* Languages: Dart, Kotlin, Java, C++
-* AI Engine: LiteRT (TensorFlow Lite)
-* Database: sqflite (SQLite)
-* State Management: Riverpod
+* **Framework:** Flutter
+* **Languages:** Dart, Kotlin, Java, C++
+* **AI Engine:** LiteRT (TensorFlow Lite)
+* **Database:** sqflite (SQLite)
+* **State Management:** Riverpod
 
 ## Quick Start
 
