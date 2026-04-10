@@ -92,18 +92,20 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
           ),
 
         // Match Info (Center Screen)
-        if (cameraState.matchedFace != null)
+        if (cameraState.matchedFace != null && !cameraState.isScanning)
           Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: (theme == AppTheme.neonBlack ? Colors.black : Colors.white).withValues(alpha: 0.7),
+                color: theme == AppTheme.watchDogs
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : AppColors.getSurface(theme).withValues(alpha: 0.8),
                 border: Border.all(color: accentColor, width: 1.5),
               ),
               child: Text(
                 'MATCH: ${cameraState.matchedFace!.name.toUpperCase()}',
                 style: AppTextStyles.hudStatus(theme).copyWith(
-                  color: accentColor,
+                  color: theme == AppTheme.watchDogs ? Colors.black : accentColor,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
