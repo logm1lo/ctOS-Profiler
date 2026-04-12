@@ -17,10 +17,10 @@ class AppSettings {
   AppSettings({
     this.dateFormat = DateFormatType.dmy,
     this.measurementUnit = MeasurementUnit.metric,
-    this.theme = AppTheme.neonBlack,
+    this.theme = AppTheme.watchDogs,
     this.showDiagnostics = false,
     this.privacyMode = false,
-    this.shutterStyle = ShutterStyle.shutter,
+    this.shutterStyle = ShutterStyle.hack,
   });
 
   AppSettings copyWith({
@@ -57,12 +57,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     state = AppSettings(
-      dateFormat: DateFormatType.values[prefs.getInt(_keyDateFormat) ?? 0],
-      measurementUnit: MeasurementUnit.values[prefs.getInt(_keyMeasurementUnit) ?? 0],
-      theme: AppTheme.values[prefs.getInt(_keyTheme) ?? 0],
+      dateFormat: DateFormatType.values[prefs.getInt(_keyDateFormat) ?? DateFormatType.dmy.index],
+      measurementUnit: MeasurementUnit.values[prefs.getInt(_keyMeasurementUnit) ?? MeasurementUnit.metric.index],
+      theme: AppTheme.values[prefs.getInt(_keyTheme) ?? AppTheme.watchDogs.index],
       showDiagnostics: prefs.getBool(_keyShowDiagnostics) ?? false,
       privacyMode: prefs.getBool(_keyPrivacyMode) ?? false,
-      shutterStyle: ShutterStyle.values[prefs.getInt(_keyShutterStyle) ?? 0],
+      shutterStyle: ShutterStyle.values[prefs.getInt(_keyShutterStyle) ?? ShutterStyle.hack.index],
     );
   }
 

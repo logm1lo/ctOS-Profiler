@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:face_detection_tflite/face_detection_tflite.dart' as fdt;
@@ -242,12 +243,24 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.file(widget.imageFile, fit: BoxFit.cover),
+            _buildImage(),
             _buildFaceOverlay(accentColor),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildImage() {
+    if (widget.imageFile.existsSync()) {
+      return Image.file(widget.imageFile, fit: BoxFit.cover);
+    } else if (widget.existingFace?.photoBytes != null && widget.existingFace!.photoBytes!.isNotEmpty) {
+      return Image.memory(widget.existingFace!.photoBytes!, fit: BoxFit.cover);
+    } else {
+      return const Center(
+        child: Icon(Icons.broken_image, color: Colors.grey, size: 50),
+      );
+    }
   }
 
   Widget _buildFaceOverlay(Color accentColor) {
@@ -469,26 +482,41 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
       weight = lbs / 2.20462;
     }
 
-    final newFace = FaceEntity(
-      id: widget.existingFace?.id,
-      name: name,
-      embedding: widget.embedding,
-      modelUsed: widget.existingFace?.modelUsed ?? ref.read(cameraProvider).modelType.name,
-      photoPath: widget.imageFile.path,
-      photoBytes: await widget.imageFile.readAsBytes(),
-      timestamp: widget.existingFace?.timestamp ?? DateTime.now().millisecondsSinceEpoch,
-      age: int.tryParse(_ageController.text),
-      occupation: _occupationController.text,
-      incomeLevel: _incomeLevel,
-      riskScore: _riskScore,
-      personalityTraits: _selectedTraits,
-      birthDate: _birthDateController.text,
-      height: height,
-      weight: weight,
-    );
+    try {
+      Uint8List? bytes;
+      if (await widget.imageFile.exists()) {
+        bytes = await widget.imageFile.readAsBytes();
+      } else {
+        bytes = widget.existingFace?.photoBytes;
+      }
 
-    await ref.read(cameraProvider.notifier).saveFace(newFace);
-    if (context.mounted) Navigator.pop(context);
+      final newFace = FaceEntity(
+        id: widget.existingFace?.id,
+        name: name,
+        embedding: widget.embedding,
+        modelUsed: widget.existingFace?.modelUsed ?? ref.read(cameraProvider).modelType.name,
+        photoPath: widget.imageFile.path,
+        photoBytes: bytes,
+        timestamp: widget.existingFace?.timestamp ?? DateTime.now().millisecondsSinceEpoch,
+        age: int.tryParse(_ageController.text),
+        occupation: _occupationController.text,
+        incomeLevel: _incomeLevel,
+        riskScore: _riskScore,
+        personalityTraits: _selectedTraits,
+        birthDate: _birthDateController.text,
+        height: height,
+        weight: weight,
+      );
+
+      await ref.read(cameraProvider.notifier).saveFace(newFace);
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving profile: $e')),
+        );
+      }
+    }
   }
 
   static const List<String> _positiveTraits = [

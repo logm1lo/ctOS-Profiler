@@ -165,32 +165,6 @@ class SettingsDialog extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('DATE FORMAT', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6))),
-              DropdownButton<DateFormatType>(
-                value: settings.dateFormat,
-                isExpanded: true,
-                dropdownColor: dialogBg,
-                style: TextStyle(color: textColor),
-                items: DateFormatType.values.map((f) => DropdownMenuItem(
-                  value: f,
-                  child: Text(f.name.toUpperCase()),
-                )).toList(),
-                onChanged: (val) => ref.read(settingsProvider.notifier).setDateFormat(val!),
-              ),
-              const SizedBox(height: 20),
-              Text('MEASUREMENT UNIT', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6))),
-              DropdownButton<MeasurementUnit>(
-                value: settings.measurementUnit,
-                isExpanded: true,
-                dropdownColor: dialogBg,
-                style: TextStyle(color: textColor),
-                items: MeasurementUnit.values.map((u) => DropdownMenuItem(
-                  value: u,
-                  child: Text(u.name.toUpperCase()),
-                )).toList(),
-                onChanged: (val) => ref.read(settingsProvider.notifier).setMeasurementUnit(val!),
-              ),
-              const SizedBox(height: 20),
               Text('SYSTEM THEME', style: AppTextStyles.hudStatus(theme).copyWith(color: textColor.withValues(alpha: 0.6))),
               DropdownButton<AppTheme>(
                 value: settings.theme,
