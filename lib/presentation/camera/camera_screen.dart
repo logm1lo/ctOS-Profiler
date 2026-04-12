@@ -26,6 +26,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Widget _buildCaptureMethodSlider(CameraState state, AppTheme theme) {
     final accentColor = AppColors.getAccent(theme);
     return Container(
@@ -192,7 +197,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
             right: 20,
             child: IconButton(
               icon: Icon(Icons.close, color: accentColor, size: 30),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+              },
             ),
           ),
         ],

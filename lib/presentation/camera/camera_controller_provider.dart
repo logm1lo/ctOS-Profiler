@@ -22,14 +22,22 @@ import 'target_profiling_screen.dart';
 enum AppMode { register, match }
 enum CaptureMethod { live, still }
 
-final cameraProvider = StateNotifierProvider<CameraControllerNotifier, CameraState>((ref) {
+final cameraProvider = StateNotifierProvider.autoDispose<CameraControllerNotifier, CameraState>((ref) {
   final dataSource = FaceLocalDataSource();
   final repository = FaceRepositoryImpl(dataSource);
-  return CameraControllerNotifier(
+
+  final notifier = CameraControllerNotifier(
     RegisterFace(repository),
     MatchFace(repository),
     ref,
   );
+
+  // Decisive cleanup when provider is destroyed
+  ref.onDispose(() {
+    notifier.stop();
+  });
+
+  return notifier;
 });
 
 class CameraState {
@@ -108,47 +116,83 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   final TFLiteService _tfliteService = TFLiteService();
   final fdt.FaceDetector _faceDetector = fdt.FaceDetector();
 
+  bool _isDisposed = false;
   int _frameCount = 0;
   double _lastProcessTime = 0;
   double _fps = 0;
-
   final Map<int, DateTime> _faceFirstSeen = {};
   final Set<int> _matchedFaceIndices = {};
 
-  CameraControllerNotifier(this._registerFace, this._matchFace, this._ref) : super(CameraState());
+  CameraControllerNotifier(this._registerFace, this._matchFace, this._ref) : super(CameraState()) {
+    debugPrint('ctOS_LOG: CameraControllerNotifier instance created');
+  }
 
   Future<void> initialize() async {
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) return;
+    debugPrint('ctOS_LOG: initialize() called');
+    if (_isDisposed) {
+      debugPrint('ctOS_LOG: initialize() aborted - already disposed');
+      return;
+    }
+    if (state.isInitialized || state.controller != null) {
+      debugPrint('ctOS_LOG: initialize() aborted - already initialized');
+      return;
+    }
 
-    final controller = CameraController(
-      cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.front,
-        orElse: () => cameras.first,
-      ),
-      ResolutionPreset.medium,
-      enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.yuv420,
-    );
+    try {
+      final cameras = await availableCameras();
+      debugPrint('ctOS_LOG: availableCameras() found ${cameras.length} devices');
+      if (_isDisposed || !mounted || cameras.isEmpty) {
+        debugPrint('ctOS_LOG: initialize() aborted after availableCameras()');
+        return;
+      }
 
-    await controller.initialize();
-    await _tfliteService.loadModel(state.modelType);
-    await _faceDetector.initialize(
-      model: fdt.FaceDetectionModel.frontCamera,
-    );
+      final controller = CameraController(
+        cameras.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.front,
+          orElse: () => cameras.first,
+        ),
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.yuv420,
+      );
 
-    state = state.copyWith(
-      controller: controller,
-      isInitialized: true,
-      isFrontCamera: controller.description.lensDirection == CameraLensDirection.front,
-    );
+      debugPrint('ctOS_LOG: controller.initialize() starting');
+      await controller.initialize();
+      if (_isDisposed || !mounted) {
+        debugPrint('ctOS_LOG: initialize() aborted after controller.initialize()');
+        await controller.dispose();
+        return;
+      }
+      debugPrint('ctOS_LOG: controller.initialize() success');
 
-    controller.startImageStream((image) => _processCameraImage(image));
+      debugPrint('ctOS_LOG: loading models...');
+      await _tfliteService.loadModel(state.modelType);
+      await _faceDetector.initialize(model: fdt.FaceDetectionModel.frontCamera);
+
+      if (_isDisposed || !mounted) {
+        debugPrint('ctOS_LOG: initialize() aborted after model loading');
+        await controller.dispose();
+        return;
+      }
+
+      state = state.copyWith(
+        controller: controller,
+        isInitialized: true,
+        isFrontCamera: controller.description.lensDirection == CameraLensDirection.front,
+      );
+
+      debugPrint('ctOS_LOG: startImageStream() starting');
+      if (!_isDisposed && controller.value.isInitialized) {
+        controller.startImageStream((image) => _processCameraImage(image));
+      }
+    } catch (e) {
+      debugPrint('ctOS_LOG: CRITICAL Error during initialization: $e');
+    }
   }
 
   Future<void> toggleCamera() async {
     final cameras = await availableCameras();
-    if (cameras.length < 2) return;
+    if (!mounted || cameras.length < 2) return;
 
     final currentDescription = state.controller?.description;
     final newDescription = cameras.firstWhere(
@@ -157,9 +201,17 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     );
 
     if (state.controller != null) {
-      await state.controller!.stopImageStream();
-      await state.controller!.dispose();
+      try {
+        if (state.controller!.value.isStreamingImages) {
+          await state.controller!.stopImageStream();
+        }
+        await state.controller!.dispose();
+      } catch (e) {
+        debugPrint('Error disposing old camera: $e');
+      }
     }
+
+    if (!mounted) return;
 
     final controller = CameraController(
       newDescription,
@@ -168,19 +220,31 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
       imageFormatGroup: ImageFormatGroup.yuv420,
     );
 
-    await controller.initialize();
+    try {
+      await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
 
-    // Re-initialize face detector based on camera direction
-    final isFrontCamera = newDescription.lensDirection == CameraLensDirection.front;
-    await _faceDetector.initialize(
-      model: isFrontCamera ? fdt.FaceDetectionModel.frontCamera : fdt.FaceDetectionModel.backCamera
-    );
+      // Re-initialize face detector based on camera direction
+      final isFrontCamera = newDescription.lensDirection == CameraLensDirection.front;
+      await _faceDetector.initialize(
+        model: isFrontCamera ? fdt.FaceDetectionModel.frontCamera : fdt.FaceDetectionModel.backCamera
+      );
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
 
-    state = state.copyWith(
-      controller: controller,
-      isFrontCamera: isFrontCamera,
-    );
-    controller.startImageStream((image) => _processCameraImage(image));
+      state = state.copyWith(
+        controller: controller,
+        isFrontCamera: isFrontCamera,
+      );
+      controller.startImageStream((image) => _processCameraImage(image));
+    } catch (e) {
+      debugPrint('Error toggling camera: $e');
+    }
   }
 
   void toggleMode() {
@@ -208,7 +272,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   }
 
   Future<void> _processCameraImage(CameraImage image) async {
-    if (state.isProcessing || state.isScanning || _frameCount++ % 10 != 0) return;
+    if (_isDisposed || !mounted || state.controller == null || state.isProcessing || state.isScanning || _frameCount++ % 10 != 0) return;
 
     final stopwatch = Stopwatch()..start();
     state = state.copyWith(isProcessing: true);
@@ -216,22 +280,26 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     try {
       final capturedImage = ImageUtils.convertYUV420ToImage(image);
 
+      if (_isDisposed || !mounted) return;
       img.Image rotated = img.copyRotate(capturedImage, angle: state.isFrontCamera ? 270 : 90);
 
       final bytes = Uint8List.fromList(img.encodeJpg(rotated));
+      if (_isDisposed || !mounted) return;
       final faces = await _faceDetector.detectFaces(bytes, mode: fdt.FaceDetectionMode.full);
 
       stopwatch.stop();
       _lastProcessTime = stopwatch.elapsedMilliseconds.toDouble();
       _fps = 1000 / _lastProcessTime;
 
-    if (mounted) {
+    if (!_isDisposed && mounted && state.controller != null) {
       state = state.copyWith(
         detectedFaces: faces,
         isProcessing: false,
         processTime: _lastProcessTime,
         fps: _fps,
       );
+    } else {
+      return;
     }
 
       if (state.captureMethod == CaptureMethod.live && faces.isNotEmpty) {
@@ -239,12 +307,14 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
       } else if (faces.isEmpty) {
         _faceFirstSeen.clear();
         _matchedFaceIndices.clear();
-        if (state.matchedFace != null) {
+        if (!_isDisposed && mounted && state.matchedFace != null) {
            state = state.copyWith(clearMatchedFace: true);
         }
       }
     } catch (e) {
-      state = state.copyWith(isProcessing: false);
+      if (!_isDisposed && mounted) {
+        state = state.copyWith(isProcessing: false);
+      }
     }
   }
 
@@ -308,18 +378,18 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
       final bbox = face.boundingBox;
       img.Image cropped = ImageUtils.cropFace(fullImage, bbox.topLeft.x, bbox.topLeft.y, bbox.width, bbox.height);
 
+      if (!mounted) return;
       final embedding = await _tfliteService.getEmbedding(cropped, imageBytes);
+
+      if (!mounted) return;
       final match = await _matchFace.execute(embedding, state.modelType.name);
 
-      if (match == null) {
-        // If no match in live scan, maybe prompt for registration?
-        // But we don't want to spam dialogs.
-        // Let's update the state so the HUD can show a "NEW TARGET" prompt.
-        state = state.copyWith(matchedFace: null, scanStatus: 'NEW TARGET DETECTED', clearMatchedFace: true);
-      } else {
-      if (mounted) {
-        state = state.copyWith(matchedFace: match, scanStatus: 'MATCH FOUND', clearMatchedFace: false);
-      }
+      if (mounted && state.controller != null) {
+        if (match == null) {
+          state = state.copyWith(matchedFace: null, scanStatus: 'NEW TARGET DETECTED', clearMatchedFace: true);
+        } else {
+          state = state.copyWith(matchedFace: match, scanStatus: 'MATCH FOUND', clearMatchedFace: false);
+        }
       }
     } catch (e) {
       debugPrint('Live match error: $e');
@@ -449,10 +519,44 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
 
 
 
+  Future<void> stop() async {
+    debugPrint('ctOS_LOG: stop() called');
+    if (_isDisposed) {
+      debugPrint('ctOS_LOG: stop() already called once. Skipping.');
+      return;
+    }
+    _isDisposed = true;
+
+    final controller = state.controller;
+
+    // 1. Immediately nullify state to prevent new frames/logic
+    if (mounted) {
+      state = state.copyWith(controller: null, isInitialized: false);
+    }
+
+    if (controller != null) {
+      // 2. Decisively dispose the hardware
+      debugPrint('ctOS_LOG: Disposing camera hardware...');
+      try {
+        if (controller.value.isStreamingImages) {
+          await controller.stopImageStream();
+        }
+        await controller.dispose();
+        debugPrint('ctOS_LOG: Camera hardware disposed successfully.');
+      } catch (e) {
+        debugPrint('ctOS_LOG: Error disposing camera controller: $e');
+      }
+    }
+
+    _faceDetector.dispose();
+    _tfliteService.dispose();
+    debugPrint('ctOS_LOG: stop() completed');
+  }
+
   @override
   void dispose() {
-    state.controller?.dispose();
-    _faceDetector.dispose();
+    debugPrint('ctOS_LOG: CameraControllerNotifier.dispose() called');
+    stop();
     super.dispose();
   }
 }

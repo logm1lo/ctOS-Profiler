@@ -166,27 +166,40 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
         Positioned(
           top: 50,
           left: 60,
-          right: 60,
-          child: Column(
+          right: 20, // Adjusted to make room for X
+          child: Row(
             children: [
-              Text(
-                'CAPTURE TARGET',
-                style: AppTextStyles.title(theme).copyWith(fontSize: 18, color: accentColor),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 1,
-                width: double.infinity,
-                color: accentColor.withValues(alpha: 0.5),
-              ),
-              if (settings.showDiagnostics) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'FPS: ${cameraState.fps.toStringAsFixed(1)} | PROC: ${cameraState.processTime.toInt()}ms',
-                  style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor.withValues(alpha: 0.7)),
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      'CAPTURE TARGET',
+                      style: AppTextStyles.title(theme).copyWith(fontSize: 18, color: accentColor),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 1,
+                      width: double.infinity,
+                      color: accentColor.withValues(alpha: 0.5),
+                    ),
+                    if (settings.showDiagnostics) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'FPS: ${cameraState.fps.toStringAsFixed(1)} | PROC: ${cameraState.processTime.toInt()}ms',
+                        style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor.withValues(alpha: 0.7)),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: Icon(Icons.close, color: accentColor, size: 24),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
             ],
           ),
         ),

@@ -48,9 +48,9 @@ android {
 
     packaging {
         jniLibs {
-            // Do not extract native libraries, keep them compressed in the APK
-            // and load them directly. This reduces installation size.
-            useLegacyPackaging = false
+            // Extract native libraries to the filesystem. 
+            // This is required for OpenCV to perform directory-based lookups for native symbols.
+            useLegacyPackaging = true
         }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -81,15 +81,11 @@ dependencies {
     implementation(libs.material)
     implementation(libs.play.feature.delivery)
     implementation(libs.play.core.common)
-    implementation(libs.play.feature.delivery)
-    implementation(libs.play.core.common)
-    implementation(libs.play.feature.delivery)
-    implementation(libs.play.core.common)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Manually include Flutter plugin dependencies
+    // Include Flutter plugin dependencies
     val flutterProjectRoot = rootDir
     val pluginsFile = File(flutterProjectRoot, ".flutter-plugins-dependencies")
     if (pluginsFile.exists()) {
@@ -100,9 +96,7 @@ dependencies {
         androidPlugins?.forEach { 
             val plugin = it as? Map<*, *>
             val name = plugin?.get("name") as? String
-            val path = plugin?.get("path") as? String
-            if (name != null && path != null) {
-                // Check if the project exists in the current build
+            if (name != null) {
                 if (findProject(":$name") != null) {
                     implementation(project(":$name"))
                 }
