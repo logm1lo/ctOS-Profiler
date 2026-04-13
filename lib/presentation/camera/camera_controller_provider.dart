@@ -32,11 +32,6 @@ final cameraProvider = StateNotifierProvider.autoDispose<CameraControllerNotifie
     ref,
   );
 
-  // Decisive cleanup when provider is destroyed
-  ref.onDispose(() {
-    notifier.stop();
-  });
-
   return notifier;
 });
 
@@ -458,8 +453,18 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     } else {
       await _registerFace.execute(face);
     }
+    
+    if (!mounted) return;
+
     _ref.invalidate(facesProvider);
-    state = state.copyWith(isScanning: false, scanStatus: 'REGISTERED');
+    
+    if (mounted) {
+      try {
+        state = state.copyWith(isScanning: false, scanStatus: 'REGISTERED');
+      } catch (e) {
+        debugPrint('ctOS_LOG: Ignored state update in saveFace after dispose: $e');
+      }
+    }
   }
 
 
@@ -501,7 +506,9 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
       final permanentFile = await file.copy(permanentPath);
 
       // Register Mode - Navigate to profiling screen
-      state = state.copyWith(isScanning: false);
+      if (mounted) {
+        state = state.copyWith(isScanning: false);
+      }
       if (context.mounted) {
         Navigator.push(
           context,
@@ -519,8 +526,8 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
 
 
 
-  Future<void> stop() async {
-    debugPrint('ctOS_LOG: stop() called');
+  Future<void> stop({bool isDisposing = false}) async {
+    debugPrint('ctOS_LOG: stop() called (isDisposing: $isDisposing)');
     if (_isDisposed) {
       debugPrint('ctOS_LOG: stop() already called once. Skipping.');
       return;
@@ -529,9 +536,14 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
 
     final controller = state.controller;
 
-    // 1. Immediately nullify state to prevent new frames/logic
-    if (mounted) {
-      state = state.copyWith(controller: null, isInitialized: false);
+    // 1. Immediately nullify state to prevent new frames/logic, 
+    // but only if we're not already in the middle of disposing the notifier.
+    if (!isDisposing && mounted) {
+      try {
+        state = state.copyWith(controller: null, isInitialized: false);
+      } catch (e) {
+        debugPrint('ctOS_LOG: Could not update state during stop: $e');
+      }
     }
 
     if (controller != null) {
@@ -556,7 +568,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   @override
   void dispose() {
     debugPrint('ctOS_LOG: CameraControllerNotifier.dispose() called');
-    stop();
+    stop(isDisposing: true);
     super.dispose();
   }
 }

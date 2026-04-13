@@ -102,6 +102,9 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
 
   @override
   Widget build(BuildContext context) {
+    // Keep camera provider alive while this screen is open to allow saving
+    ref.watch(cameraProvider);
+
     final settings = ref.watch(settingsProvider);
     final theme = settings.theme;
     final accentColor = AppColors.getAccent(theme);
