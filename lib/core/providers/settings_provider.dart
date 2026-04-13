@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum DateFormatType { dmy, mdy, ymd }
-enum MeasurementUnit { metric, imperial }
+enum DateFormatType { dmy }
+enum MeasurementUnit { metric }
 enum AppTheme { neonBlack, watchDogs, whiteBlack }
 enum ShutterStyle { shutter, hack }
 

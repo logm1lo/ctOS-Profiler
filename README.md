@@ -2,7 +2,7 @@
 
 # ctOS - Profiler
 
-ctOS - Profiler is a mobile application inspired by the Watch Dogs series, built with Flutter and LiteRT (TensorFlow Lite). It provides on-device face recognition and tracking.
+ctOS - Profiler is a mobile application inspired by the *Watch Dogs* series. It provides on-device real-time face recognition, tracking, and detailed target profiling using LiteRT (TensorFlow Lite).
 
 ## Table of Contents
 
@@ -18,45 +18,54 @@ ctOS - Profiler is a mobile application inspired by the Watch Dogs series, built
 
 ## Features
 
-* **AI Face Detection:** Real-time tracking and recognition using LiteRT.
-* **Local Storage:** Secure storage for face embeddings and logs via sqflite.
-* **Native Bridge** High-performance camera handling and AI inference via JNI.
-* **State Management:** Reactive and predictable data flow using Riverpod.
+* **AI Face Detection & Recognition:** Real-time tracking and matching using high-performance models (FaceNet, MobileFaceNet).
+* **Deep Profiling:** Generate and edit detailed digital dossiers for targets, including:
+    * **Demographics:** Name, age, birth date (DMY format), and occupation.
+    * **Biometrics:** Height (cm) and weight (kg) tracking.
+    * **Socio-Economic Status:** Automated income level assessment.
+    * **Risk Assessment:** Real-time threat level calculation and monitoring.
+    * **Personality Profiling:** Analysis of positive and negative behavioral traits.
+* **Local Database:** Secure on-device storage for face embeddings and profiles via sqflite.
 
 ## Tech Stack
 
 * **Framework:** Flutter
 * **Languages:** Dart, Kotlin, Java, C++
-* **AI Engine:** LiteRT (TensorFlow Lite)
+* **AI Engine:** LiteRT (TensorFlow Lite / `face_detection_tflite`)
+* **Computer Vision:** OpenCV (`dartcv4`)
 * **Database:** sqflite (SQLite)
-* **State Management:** Riverpod
+* **State Management:** Riverpod (v2)
 
 ## Quick Start
 
 ### Prerequisites
 
-* Flutter SDK (Stable)
-* Android Studio / SDK Platform 35
-* Android NDK (Version 25.1.8937393)
-* Java 17
+* **Flutter SDK:** Stable channel (>= 3.1.0)
+* **Android SDK:** Platform 35
+* **Android NDK:** Version **25.1.8937393** (Strictly required for native asset compilation)
+* **Java:** Version 17
 
 ### Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/logm1lo/ctOS-Profiler.git
 ```
 
-2. Get dependencies:
+2. **Get dependencies:**
 ```bash
 flutter pub get
 ```
 
-3. Configuration:
-```bash
-Check `local.properties` in the `android/` folder to ensure your SDK and NDK paths are correct.
+3. **Configure Environment:**
+Create or edit `android/local.properties` and ensure the NDK path is explicitly set:
+```properties
+sdk.dir=C\:\\Users\\YourUser\\AppData\\Local\\Android\\Sdk
+ndk.dir=C\:\\Users\\YourUser\\AppData\\Local\\Android\\Sdk\\ndk\\25.1.8937393
+flutter.sdk=C\:\\path\\to\\flutter
 ```
-4. Run:
+
+4. **Run the App:**
 ```bash
 flutter run
 ```
@@ -65,50 +74,38 @@ flutter run
 
 ```
 ctOS-Profiler/
-├── android/               # Android platform files
-├── app/                   # Main Android application module
-├── assets/models/         # TFLite models and AI assets
-├── buildSrc/              # Custom build logic and mock plugins
-├── gradle/                # Gradle wrapper and global scripts
+├── android/               # Android platform-specific configuration
+├── app/                   # Main Android application module (Kotlin/Gradle)
+├── assets/models/         # Pre-trained TFLite models (FaceNet, etc.)
+├── buildSrc/              # Custom Gradle build logic and mock plugins
 ├── lib/                   # Flutter source code
-│   ├── core/              # Utilities and shared themes
-│   ├── data/              # Database and repository implementations
-│   ├── domain/            # Business logic and data entities
-│   └── presentation/      # UI screens and state providers
-├── test/                  # Unit and widget tests
-├── build.gradle           # Root build script
-├── flutter_mock.gradle    # Custom Flutter build configuration
-├── pubspec.yaml           # Flutter project metadata
-└── settings.gradle.kts    # Project structure configuration
+│   ├── core/              # Shared utilities, themes, and providers
+│   ├── data/              # Data sources and repository implementations
+│   ├── domain/            # Business logic, entities, and use cases
+│   └── presentation/      # UI screens, widgets, and Riverpod notifiers
+├── pubspec.yaml           # Flutter dependencies and assets configuration
+└── README.md              # Project documentation
 ```
 
 ## Architecture
 
-The project uses a layered architecture to keep code clean and maintainable:
+The project follows a **Clean Architecture** pattern with a Clear separation of concerns:
 
-* **Presentation:** Manages UI and state via Riverpod providers.
-* **Domain:** Contains the core business logic and data models.
-* **Data:** Handles persistent storage (SQLite) and native communication.
-* **Native Layer:** Manages hardware-heavy tasks like camera frame processing and TFLite execution.
-
-## Testing
-
-Run the full test suite with:
-```bash
-flutter test
-```
-
-## Contributing
-
-Contributions are welcome. Please follow the standard fork-and-pull-request workflow. Ensure your code is formatted (`flutter format .`) and passes all tests before submitting.
+* **Presentation Layer:** Handles UI rendering and state management using Riverpod. Screens watch providers to react to real-time AI detections.
+* **Domain Layer:** Defines the core entities (e.g., `FaceEntity`) and business rules (e.g., `MatchFace`).
+* **Data Layer:** Implements data persistence and coordinates between local databases and native services.
+* **Native Infrastructure:** Leverages JNI and Dart FFI to perform heavy lifting like YUV-to-RGB conversion and model inference.
 
 ## Common Errors
 
-### Duplicate Class Errors
-If you run into `Duplicate class io.flutter.Build`, it is likely a conflict between debug and release embeddings. This is handled by the `FlutterMockPlugin` in `buildSrc`. Library dependencies should use `compileOnly` for the Flutter embedding to avoid bundling it multiple times.
+### NDK PathNotFoundException
+If you encounter `PathNotFoundException: Directory listing failed` during build, ensure your `ndk.dir` in `local.properties` points to a complete NDK installation. Version **25.1.8937393** is recommended. Avoid using NDK versions that only contain an `.installer` folder.
 
-### NDK Configuration
-The native components require a specific NDK version (25.1.x). If compilation fails, check your NDK installation path in `local.properties`.
+### Duplicate Class io.flutter.Build
+This usually occurs due to a conflict in the Flutter embedding. The project uses a custom `FlutterMockPlugin` in `buildSrc` to manage these dependencies. Ensure that library sub-projects use `compileOnly` for the Flutter embedding.
+
+### Camera Controller "Bad State"
+If you see errors related to `CameraControllerNotifier` after `dispose`, ensure that any asynchronous operations (like saving profiles) are guarded with `mounted` checks and that the provider is not being invalidated prematurely during navigation.
 
 ## License
 

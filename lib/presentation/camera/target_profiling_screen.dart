@@ -35,7 +35,6 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
   late TextEditingController _ageController;
   late TextEditingController _birthDateController;
   late TextEditingController _heightController;
-  late TextEditingController _inchesController; // Added for imperial
   late TextEditingController _weightController;
 
   late String _incomeLevel;
@@ -52,28 +51,8 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
     _ageController = TextEditingController(text: widget.existingFace?.age?.toString() ?? '25');
     _birthDateController = TextEditingController(text: widget.existingFace?.birthDate ?? '');
 
-    // Initialize unit-aware controllers
-    if (settings.measurementUnit == MeasurementUnit.metric) {
-      _heightController = TextEditingController(text: widget.existingFace?.height?.toString() ?? '');
-      _inchesController = TextEditingController();
-      _weightController = TextEditingController(text: widget.existingFace?.weight?.toString() ?? '');
-    } else {
-      if (widget.existingFace?.height != null) {
-        final totalInches = widget.existingFace!.height! / 2.54;
-        _heightController = TextEditingController(text: (totalInches / 12).floor().toString());
-        _inchesController = TextEditingController(text: (totalInches % 12).round().toString());
-      } else {
-        _heightController = TextEditingController();
-        _inchesController = TextEditingController();
-      }
-
-      if (widget.existingFace?.weight != null) {
-        final lbs = widget.existingFace!.weight! * 2.20462;
-        _weightController = TextEditingController(text: lbs.toStringAsFixed(1));
-      } else {
-        _weightController = TextEditingController();
-      }
-    }
+    _heightController = TextEditingController(text: widget.existingFace?.height?.toString() ?? '');
+    _weightController = TextEditingController(text: widget.existingFace?.weight?.toString() ?? '');
 
     _incomeLevel = widget.existingFace?.incomeLevel ?? 'MIDDLE';
     _riskScore = widget.existingFace?.riskScore ?? 15;
@@ -92,7 +71,6 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
     _ageController.dispose();
     _birthDateController.dispose();
     _heightController.dispose();
-    _inchesController.dispose();
     _weightController.dispose();
     _scanlineController.dispose();
     super.dispose();
@@ -177,28 +155,13 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
   }
 
   Widget _buildBiometricsInput(AppSettings settings, AppTheme theme, Color accentColor, Color textColor) {
-    if (settings.measurementUnit == MeasurementUnit.metric) {
-      return Row(
-        children: [
-          Expanded(child: _buildTextField('HEIGHT (CM)', _heightController, theme, accentColor, textColor, keyboardType: TextInputType.number)),
-          const SizedBox(width: 16),
-          Expanded(child: _buildTextField('WEIGHT (KG)', _weightController, theme, accentColor, textColor, keyboardType: TextInputType.number)),
-        ],
-      );
-    } else {
-      return Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _buildTextField('HEIGHT (FT)', _heightController, theme, accentColor, textColor, keyboardType: TextInputType.number)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildTextField('INCHES', _inchesController, theme, accentColor, textColor, keyboardType: TextInputType.number)),
-            ],
-          ),
-          _buildTextField('WEIGHT (LBS)', _weightController, theme, accentColor, textColor, keyboardType: TextInputType.number),
-        ],
-      );
-    }
+    return Row(
+      children: [
+        Expanded(child: _buildTextField('HEIGHT (CM)', _heightController, theme, accentColor, textColor, keyboardType: TextInputType.number)),
+        const SizedBox(width: 16),
+        Expanded(child: _buildTextField('WEIGHT (KG)', _weightController, theme, accentColor, textColor, keyboardType: TextInputType.number)),
+      ],
+    );
   }
 
   Widget _buildBackground(Color backgroundColor) {
@@ -330,7 +293,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
               );
               if (picked != null) {
                 setState(() {
-                  controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                  controller.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
                 });
               }
             },
@@ -472,18 +435,8 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
     double? height;
     double? weight;
 
-    if (settings.measurementUnit == MeasurementUnit.metric) {
-      height = double.tryParse(_heightController.text);
-      weight = double.tryParse(_weightController.text);
-    } else {
-      // Imperial to Metric
-      final ft = double.tryParse(_heightController.text) ?? 0;
-      final inches = double.tryParse(_inchesController.text) ?? 0;
-      height = (ft * 12 + inches) * 2.54;
-
-      final lbs = double.tryParse(_weightController.text) ?? 0;
-      weight = lbs / 2.20462;
-    }
+    height = double.tryParse(_heightController.text);
+    weight = double.tryParse(_weightController.text);
 
     try {
       Uint8List? bytes;
