@@ -9,7 +9,7 @@ class ImageUtils {
     final int uvRowStride = image.planes[1].bytesPerRow;
     final int uvPixelStride = image.planes[1].bytesPerPixel!;
 
-    final outImg = img.Image(width: width, height: height);
+    final outImg = img.Image(width: width, height: height, numChannels: 3);
 
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
@@ -29,6 +29,32 @@ class ImageUtils {
       }
     }
     return outImg;
+  }
+
+  static Uint8List convertYUV420ToNv21(CameraImage image) {
+    final width = image.width;
+    final height = image.height;
+    final ySize = width * height;
+    final uvSize = width * height ~/ 2;
+
+    final nv21 = Uint8List(ySize + uvSize);
+
+    // Y plane
+    nv21.setRange(0, ySize, image.planes[0].bytes);
+
+    // UV plane
+    final vPlane = image.planes[2].bytes;
+    final uPlane = image.planes[1].bytes;
+    
+    // In NV21, UV data is interleaved as V, U, V, U...
+    // This is a simplified version and might need adjustment based on strides
+    int compositeIndex = ySize;
+    for (int i = 0; i < uPlane.length; i += image.planes[1].bytesPerPixel!) {
+      nv21[compositeIndex++] = vPlane[i];
+      nv21[compositeIndex++] = uPlane[i];
+    }
+
+    return nv21;
   }
 
   static img.Image cropFace(img.Image image, double x, double y, double width, double height) {

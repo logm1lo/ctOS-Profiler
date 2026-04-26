@@ -1,6 +1,6 @@
-name: ct_os
-description: A cyberpunk hacker aesthetic face recognition app.
-version: 1.0.0+1
+name: ctos
+description: A unofficial Watch Dogs ctOS face recognition app reimagined.
+version: 1.0.1+1
 
 environment:
   sdk: '>=3.1.0 <4.0.0'

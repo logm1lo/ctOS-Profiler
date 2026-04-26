@@ -1,0 +1,15 @@
+# The package name of the app under test
+app_package_name "com.logm1lo.ctos"
+
+# The package name of the test app
+tests_package_name "com.logm1lo.ctos.test"
+
+# Use the 'en-US' locale
+locales ["en-US"]
+
+# Clear the screenshots directory before running
+clear_previous_screenshots true
+
+# Paths to the APKs
+app_apk_path "../app/build/outputs/flutter-apk/app-debug.apk"
+tests_apk_path "../app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"

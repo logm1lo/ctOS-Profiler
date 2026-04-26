@@ -84,6 +84,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("tools.fastlane:screengrab:2.1.1")
 
     // Include Flutter plugin dependencies
     val flutterProjectRoot = rootDir

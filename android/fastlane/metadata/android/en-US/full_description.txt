@@ -1,0 +1,30 @@
+Welcome to the next evolution of personal security and surveillance. Inspired by Watch Dogs, ctOS - Profiler transforms your mobile device into a high-performance intelligence tool, capable of identifying and profiling targets in real-time.
+
+Using AI and Computer Vision, ctOS - Profiler allows you to scan your surroundings, detect faces, and build a comprehensive intelligence database directly on your device.
+
+KEY FEATURES:
+
+Advanced Face Recognition
+Utilizing LiteRT (TensorFlow Lite) and high-performance neural networks (FaceNet/MobileFaceNet), the profiler identifies and tracks individuals with surgical precision.
+
+Deep Target Profiling
+Generate detailed digital dossiers for any target. Customize and store data including:
+* Demographics: Name, age, birth date (DMY format), and occupation.
+* Biometrics: Track height (cm) and weight (kg) for accurate physical profiling.
+* Socio-Economic Status: Assign income levels and social tiers.
+* Risk Assessment: Calculate real-time threat levels based on behavioral parameters.
+* Personality Profiling: Analyze and assign positive and negative personality traits to build a complete psychological profile.
+
+Privacy-First & Offline
+Intelligence shouldn't be shared. All processing happens locally on your hardware.
+* No cloud uploads.
+* Secure local SQLite database.
+* On-device AI inference ensures your data stays in your hands.
+
+TECHNICAL SPECS:
+* Optimized for Android SDK 35.
+* Powered by OpenCV for native camera frame processing.
+* Highly efficient memory mapping for AI models, ensuring smooth performance even on mid-range devices.
+
+DISCLAIMER:
+ctOS - Profiler is a simulation and entertainment tool inspired by cyberpunk culture and hacker fiction. It is designed for roleplay and creative profiling; it does not access real-world government or private databases.

@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="ct_os"
+        android:label="ctOS Profiler"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

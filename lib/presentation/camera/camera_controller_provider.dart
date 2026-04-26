@@ -109,7 +109,6 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   final MatchFace _matchFace;
   final Ref _ref;
   final TFLiteService _tfliteService = TFLiteService();
-  final fdt.FaceDetector _faceDetector = fdt.FaceDetector();
 
   bool _isDisposed = false;
   int _frameCount = 0;
@@ -162,7 +161,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
 
       debugPrint('ctOS_LOG: loading models...');
       await _tfliteService.loadModel(state.modelType);
-      await _faceDetector.initialize(model: fdt.FaceDetectionModel.frontCamera);
+      await _tfliteService.initialize(isFrontCamera: controller.description.lensDirection == CameraLensDirection.front);
 
       if (_isDisposed || !mounted) {
         debugPrint('ctOS_LOG: initialize() aborted after model loading');
@@ -224,9 +223,8 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
 
       // Re-initialize face detector based on camera direction
       final isFrontCamera = newDescription.lensDirection == CameraLensDirection.front;
-      await _faceDetector.initialize(
-        model: isFrontCamera ? fdt.FaceDetectionModel.frontCamera : fdt.FaceDetectionModel.backCamera
-      );
+      await _tfliteService.initialize(isFrontCamera: isFrontCamera);
+
       if (!mounted) {
         await controller.dispose();
         return;
@@ -267,38 +265,55 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   }
 
   Future<void> _processCameraImage(CameraImage image) async {
-    if (_isDisposed || !mounted || state.controller == null || state.isProcessing || state.isScanning || _frameCount++ % 10 != 0) return;
+    if (_isDisposed || !mounted || state.controller == null || state.isProcessing || state.isScanning || _frameCount++ % 15 != 0) return;
 
+    debugPrint('ctOS_LOG: Processing frame $_frameCount');
     final stopwatch = Stopwatch()..start();
     state = state.copyWith(isProcessing: true);
 
     try {
-      final capturedImage = ImageUtils.convertYUV420ToImage(image);
+      // Create a simplified map for compute
+      final Map<String, dynamic> args = {
+        'planes': image.planes.map((p) => {
+          'bytes': p.bytes,
+          'bytesPerRow': p.bytesPerRow,
+          'bytesPerPixel': p.bytesPerPixel,
+        }).toList(),
+        'width': image.width,
+        'height': image.height,
+        'format': image.format.group.name,
+        'isFrontCamera': state.isFrontCamera,
+      };
+
+      // Offload heavy processing to a background isolate
+      final result = await compute(_heavyImageProcessing, args);
 
       if (_isDisposed || !mounted) return;
-      img.Image rotated = img.copyRotate(capturedImage, angle: state.isFrontCamera ? 270 : 90);
 
-      final bytes = Uint8List.fromList(img.encodeJpg(rotated));
-      if (_isDisposed || !mounted) return;
-      final faces = await _faceDetector.detectFaces(bytes, mode: fdt.FaceDetectionMode.full);
+      final Uint8List bytes = result['bytes'] as Uint8List;
 
+      debugPrint('ctOS_LOG: Frame converted/rotated in background in ${stopwatch.elapsedMilliseconds}ms. Detecting faces...');
+      
+      // 4. Detect Faces (Still on main thread but bytes are ready)
+      final faces = await _tfliteService.detectFaces(bytes);
+      
       stopwatch.stop();
       _lastProcessTime = stopwatch.elapsedMilliseconds.toDouble();
       _fps = 1000 / _lastProcessTime;
 
-    if (!_isDisposed && mounted && state.controller != null) {
-      state = state.copyWith(
-        detectedFaces: faces,
-        isProcessing: false,
-        processTime: _lastProcessTime,
-        fps: _fps,
-      );
-    } else {
-      return;
-    }
+      debugPrint('ctOS_LOG: Detected ${faces.length} faces in ${_lastProcessTime}ms');
+
+      if (!_isDisposed && mounted && state.controller != null) {
+        state = state.copyWith(
+          detectedFaces: faces,
+          isProcessing: false,
+          processTime: _lastProcessTime,
+          fps: _fps,
+        );
+      }
 
       if (state.captureMethod == CaptureMethod.live && faces.isNotEmpty) {
-        _handleLiveMatching(faces, rotated, bytes);
+        _handleLiveMatching(faces, bytes);
       } else if (faces.isEmpty) {
         _faceFirstSeen.clear();
         _matchedFaceIndices.clear();
@@ -307,13 +322,59 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
         }
       }
     } catch (e) {
+      debugPrint('ctOS_LOG: Error in _processCameraImage: $e');
       if (!_isDisposed && mounted) {
         state = state.copyWith(isProcessing: false);
       }
     }
   }
 
-  Future<void> _handleLiveMatching(List<fdt.Face> faces, img.Image fullImage, Uint8List imageBytes) async {
+  static Future<Map<String, dynamic>> _heavyImageProcessing(Map<String, dynamic> args) async {
+    final List<dynamic> planesData = args['planes'];
+    final int width = args['width'];
+    final int height = args['height'];
+    final bool isFrontCamera = args['isFrontCamera'];
+
+    // 1. Convert YUV to Image
+    final int uvRowStride = planesData[1]['bytesPerRow'];
+    final int? uvPixelStride = planesData[1]['bytesPerPixel'];
+    final Uint8List yBytes = planesData[0]['bytes'];
+    final Uint8List uBytes = planesData[1]['bytes'];
+    final Uint8List vBytes = planesData[2]['bytes'];
+
+    final outImg = img.Image(width: width, height: height, numChannels: 3);
+
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        final int uvIndex = (uvPixelStride ?? 1) * (x >> 1) + uvRowStride * (y >> 1);
+        final int index = y * width + x;
+
+        if (index >= yBytes.length || uvIndex >= uBytes.length || uvIndex >= vBytes.length) continue;
+
+        final yp = yBytes[index];
+        final up = uBytes[uvIndex];
+        final vp = vBytes[uvIndex];
+
+        int r = (yp + (vp - 128) * 1.402).round().clamp(0, 255);
+        int g = (yp - (up - 128) * 0.344136 - (vp - 128) * 0.714136).round().clamp(0, 255);
+        int b = (yp + (up - 128) * 1.772).round().clamp(0, 255);
+
+        outImg.setPixelRgb(x, y, r, g, b);
+      }
+    }
+
+    // 2. Rotate
+    img.Image rotated = img.copyRotate(outImg, angle: isFrontCamera ? 270 : 90);
+
+    // 3. Encode to JPG
+    final bytes = Uint8List.fromList(img.encodeJpg(rotated));
+
+    return {
+      'bytes': bytes,
+    };
+  }
+
+  Future<void> _handleLiveMatching(List<fdt.Face> faces, Uint8List imageBytes) async {
     final now = DateTime.now();
 
     // Since we don't have Face.id, we'll use a simple spatial tracker
@@ -350,7 +411,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
           final duration = now.difference(newFaceFirstSeen[i]!);
           if (duration.inMilliseconds > 1000) {
             newMatchedIndices.add(i);
-            _performLiveMatch(face, fullImage, imageBytes);
+            _performLiveMatch(face, imageBytes);
           }
         }
       } else {
@@ -368,13 +429,10 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     return Offset(bbox.topLeft.x + bbox.width / 2, bbox.topLeft.y + bbox.height / 2);
   }
 
-  Future<void> _performLiveMatch(fdt.Face face, img.Image fullImage, Uint8List imageBytes) async {
+  Future<void> _performLiveMatch(fdt.Face face, Uint8List imageBytes) async {
     try {
-      final bbox = face.boundingBox;
-      img.Image cropped = ImageUtils.cropFace(fullImage, bbox.topLeft.x, bbox.topLeft.y, bbox.width, bbox.height);
-
       if (!mounted) return;
-      final embedding = await _tfliteService.getEmbedding(cropped, imageBytes);
+      final embedding = await _tfliteService.getEmbedding(face, imageBytes);
 
       if (!mounted) return;
       final match = await _matchFace.execute(embedding, state.modelType.name);
@@ -476,17 +534,14 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     if (image == null) throw 'Failed to decode image';
 
     // Use the first detected face from the captured image for accuracy
-    final faces = await _faceDetector.detectFaces(bytes, mode: fdt.FaceDetectionMode.full);
+    final faces = await _tfliteService.detectFaces(bytes);
     if (faces.isEmpty) throw 'No face detected in capture';
 
     final face = faces.first;
-    final bbox = face.boundingBox;
-
-    img.Image cropped = ImageUtils.cropFace(image, bbox.topLeft.x, bbox.topLeft.y, bbox.width, bbox.height);
-    state = state.copyWith(scanProgress: 0.6, scanStatus: 'ENCODING');
+    state = state.copyWith(scanProgress: 0.6, scanStatus: 'EXTRACTING FEATURES');
 
     // Use the new service to get embedding
-    final embedding = await _tfliteService.getEmbedding(cropped, bytes);
+    final embedding = await _tfliteService.getEmbedding(face, bytes);
     state = state.copyWith(scanProgress: 0.8, scanStatus: 'MATCHING');
 
     if (state.mode == AppMode.match) {
@@ -560,7 +615,6 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
       }
     }
 
-    _faceDetector.dispose();
     _tfliteService.dispose();
     debugPrint('ctOS_LOG: stop() completed');
   }

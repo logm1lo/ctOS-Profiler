@@ -1,0 +1,23 @@
+Categories:
+  - Security
+  - Graphics
+License: GPL-3.0-only
+AuthorName: logmilo
+SourceCode: https://github.com/logm1lo/ctOS
+IssueTracker: https://github.com/logm1lo/ctOS/issues
+
+RepoType: git
+Repo: https://github.com/logm1lo/ctOS
+
+Builds:
+  - versionName: '1.0.2'
+    versionCode: 1
+    commit: 86e012d48f63e9c0183a06c2059032235e121614
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '1.0.2'
+CurrentVersionCode: 1
