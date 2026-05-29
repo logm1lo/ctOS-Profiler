@@ -179,6 +179,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
   }
 
   Widget _buildHeader(AppTheme theme, Color accentColor) {
+    final isRefining = widget.existingFace != null;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20.0),
       child: Column(
@@ -186,13 +187,23 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
         children: [
           Row(
             children: [
-              Icon(Icons.security, color: accentColor, size: 20),
+              Icon(isRefining ? Icons.update : Icons.security, color: accentColor, size: 20),
               const SizedBox(width: 8),
-              Text('ctOS // TARGET_PROFILER', style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor)),
+              Text(
+                isRefining ? 'ctOS // UPDATE_PROFILE' : 'ctOS // TARGET_PROFILER',
+                style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor),
+              ),
             ],
           ),
           const SizedBox(height: 4),
           Container(height: 2, width: 60, color: accentColor),
+          if (isRefining) ...[
+            const SizedBox(height: 8),
+            Text(
+              'REFINING: ${widget.existingFace!.name.toUpperCase()}',
+              style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor.withValues(alpha: 0.7), fontSize: 10),
+            ),
+          ],
         ],
       ),
     );
@@ -449,7 +460,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
       final newFace = FaceEntity(
         id: widget.existingFace?.id,
         name: name,
-        embedding: widget.embedding,
+        embeddings: [widget.embedding],
         modelUsed: widget.existingFace?.modelUsed ?? ref.read(cameraProvider).modelType.name,
         photoPath: widget.imageFile.path,
         photoBytes: bytes,

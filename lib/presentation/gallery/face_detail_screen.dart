@@ -139,7 +139,7 @@ class FaceDetailScreen extends ConsumerWidget {
                               irises: [],
                               originalSize: size,
                             ),
-                            embedding: currentFace.embedding,
+                            embedding: currentFace.embeddings.first,
                             existingFace: currentFace,
                           ),
                         ),
@@ -150,16 +150,32 @@ class FaceDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
 
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.1),
-                  border: Border.all(color: accentColor.withValues(alpha: 0.5)),
-                ),
-                child: Text(
-                  'ID: ${currentFace.id ?? "NEW_TARGET"}',
-                  style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor),
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.1),
+                      border: Border.all(color: accentColor.withValues(alpha: 0.5)),
+                    ),
+                    child: Text(
+                      'ID: ${currentFace.id ?? "NEW_TARGET"}',
+                      style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.1),
+                      border: Border.all(color: accentColor.withValues(alpha: 0.5)),
+                    ),
+                    child: Text(
+                      'SAMPLES: ${currentFace.embeddings.length}',
+                      style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

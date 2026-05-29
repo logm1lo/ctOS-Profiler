@@ -5,7 +5,7 @@ class FaceRecord extends FaceEntity {
   FaceRecord({
     super.id,
     required super.name,
-    required super.embedding,
+    required super.embeddings,
     required super.modelUsed,
     required super.photoPath,
     super.photoBytes,
@@ -25,7 +25,7 @@ class FaceRecord extends FaceEntity {
     return {
       'id': id,
       'name': name,
-      'embedding': jsonEncode(embedding),
+      'embedding': jsonEncode(embeddings),
       'model_used': modelUsed,
       'photo_path': photoPath,
       'photo_bytes': photoBytes,
@@ -42,12 +42,24 @@ class FaceRecord extends FaceEntity {
   }
 
   factory FaceRecord.fromMap(Map<String, dynamic> map) {
+    List<List<double>> embeddingsList = [];
+    if (map['embedding'] is String) {
+      final decoded = jsonDecode(map['embedding']);
+      if (decoded is List) {
+        if (decoded.isNotEmpty && decoded.first is List) {
+          // New format: List<List<double>>
+          embeddingsList = decoded.map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList();
+        } else {
+          // Old format: List<double>
+          embeddingsList = [(decoded).map((e) => (e as num).toDouble()).toList()];
+        }
+      }
+    }
+
     return FaceRecord(
       id: map['id'],
       name: map['name'],
-      embedding: map['embedding'] is String
-          ? (jsonDecode(map['embedding']) as List).map((e) => (e as num).toDouble()).toList()
-          : (map['embedding'] as List).cast<double>(),
+      embeddings: embeddingsList,
       modelUsed: map['model_used'],
       photoPath: map['photo_path'],
       photoBytes: map['photo_bytes'],
@@ -69,7 +81,7 @@ class FaceRecord extends FaceEntity {
     return FaceRecord(
       id: entity.id,
       name: entity.name,
-      embedding: entity.embedding,
+      embeddings: entity.embeddings,
       modelUsed: entity.modelUsed,
       photoPath: entity.photoPath,
       photoBytes: entity.photoBytes,

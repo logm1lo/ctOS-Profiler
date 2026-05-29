@@ -21,7 +21,7 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-gradle-plugin") apply false
-    id("com.android.application") version "8.3.2" apply false
+    id("com.android.application") version "8.6.0" apply false
     id("org.jetbrains.kotlin.android") version "1.9.22" apply false
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }

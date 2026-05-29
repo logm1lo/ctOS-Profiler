@@ -116,7 +116,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               child: CircularProgressIndicator(color: accentColor),
             ),
 
-          // HUD Layer
+          // HUD Layer (Visuals + Target Buttons)
           const HudOverlay(),
 
           // Scan Progress Overlay
@@ -139,7 +139,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                 Expanded(
                   child: NeonButton(
                     label: cameraState.mode == AppMode.match ? 'MODE: MATCH' : 'MODE: REG',
-                    onPressed: () => ref.read(cameraProvider.notifier).toggleMode(),
+                    onPressed: () {
+                      debugPrint('ctOS_LOG: Mode button pressed');
+                      ref.read(cameraProvider.notifier).toggleMode();
+                    },
                     isSecondary: true,
                   ),
                 ),
@@ -147,7 +150,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                 Expanded(
                   child: NeonButton(
                     label: cameraState.modelType == FaceModel.faceNet ? 'MODEL: FACENET' : 'MODEL: MOBILE',
-                    onPressed: () => ref.read(cameraProvider.notifier).toggleModel(),
+                    onPressed: () {
+                      debugPrint('ctOS_LOG: Model button pressed');
+                      ref.read(cameraProvider.notifier).toggleModel();
+                    },
                     isSecondary: true,
                   ),
                 ),

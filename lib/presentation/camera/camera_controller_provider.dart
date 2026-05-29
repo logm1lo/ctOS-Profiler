@@ -11,6 +11,7 @@ import 'package:image/image.dart' as img;
 
 import '../../core/utils/image_utils.dart';
 import '../../core/utils/tflite_service.dart';
+import '../../core/utils/similarity.dart';
 import '../../domain/entities/face_entity.dart';
 import '../../domain/usecases/register_face.dart';
 import '../../domain/usecases/match_face.dart';
@@ -114,6 +115,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   int _frameCount = 0;
   double _lastProcessTime = 0;
   double _fps = 0;
+  DateTime? _lastFrameTime;
   final Map<int, DateTime> _faceFirstSeen = {};
   final Set<int> _matchedFaceIndices = {};
 
@@ -247,10 +249,10 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     );
   }
 
-  void setMode(AppMode mode) {
+  void setMode(AppMode mode, {bool clearMatchedFace = true}) {
     state = state.copyWith(
       mode: mode,
-      clearMatchedFace: true,
+      clearMatchedFace: clearMatchedFace,
     );
   }
 
@@ -265,9 +267,17 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   }
 
   Future<void> _processCameraImage(CameraImage image) async {
-    if (_isDisposed || !mounted || state.controller == null || state.isProcessing || state.isScanning || _frameCount++ % 15 != 0) return;
+    if (_isDisposed || !mounted || state.controller == null || state.isProcessing || state.isScanning) return;
 
-    debugPrint('ctOS_LOG: Processing frame $_frameCount');
+    final now = DateTime.now();
+    // Adaptive throttling: allow processing if last frame was more than 150ms ago
+    // or if we haven't processed anything yet.
+    if (_lastFrameTime != null && now.difference(_lastFrameTime!).inMilliseconds < 150) {
+      return;
+    }
+    _lastFrameTime = now;
+
+    debugPrint('ctOS_LOG: Processing frame ${_frameCount++}');
     final stopwatch = Stopwatch()..start();
     state = state.copyWith(isProcessing: true);
 
@@ -337,7 +347,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
 
     // 1. Convert YUV to Image
     final int uvRowStride = planesData[1]['bytesPerRow'];
-    final int? uvPixelStride = planesData[1]['bytesPerPixel'];
+    final int uvPixelStride = planesData[1]['bytesPerPixel'] ?? 1;
     final Uint8List yBytes = planesData[0]['bytes'];
     final Uint8List uBytes = planesData[1]['bytes'];
     final Uint8List vBytes = planesData[2]['bytes'];
@@ -345,29 +355,32 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     final outImg = img.Image(width: width, height: height, numChannels: 3);
 
     for (int y = 0; y < height; y++) {
+      final int yOffset = y * width;
+      final int uvYOffset = uvRowStride * (y >> 1);
+
       for (int x = 0; x < width; x++) {
-        final int uvIndex = (uvPixelStride ?? 1) * (x >> 1) + uvRowStride * (y >> 1);
-        final int index = y * width + x;
+        final int uvIndex = uvPixelStride * (x >> 1) + uvYOffset;
+        final int index = yOffset + x;
 
         if (index >= yBytes.length || uvIndex >= uBytes.length || uvIndex >= vBytes.length) continue;
 
-        final yp = yBytes[index];
-        final up = uBytes[uvIndex];
-        final vp = vBytes[uvIndex];
+        final int yp = yBytes[index];
+        final int up = uBytes[uvIndex] - 128;
+        final int vp = vBytes[uvIndex] - 128;
 
-        int r = (yp + (vp - 128) * 1.402).round().clamp(0, 255);
-        int g = (yp - (up - 128) * 0.344136 - (vp - 128) * 0.714136).round().clamp(0, 255);
-        int b = (yp + (up - 128) * 1.772).round().clamp(0, 255);
+        final int r = (yp + (vp * 1.402)).round().clamp(0, 255);
+        final int g = (yp - (up * 0.344136) - (vp * 0.714136)).round().clamp(0, 255);
+        final int b = (yp + (up * 1.772)).round().clamp(0, 255);
 
         outImg.setPixelRgb(x, y, r, g, b);
       }
     }
 
     // 2. Rotate
-    img.Image rotated = img.copyRotate(outImg, angle: isFrontCamera ? 270 : 90);
+    final img.Image rotated = img.copyRotate(outImg, angle: isFrontCamera ? 270 : 90);
 
-    // 3. Encode to JPG
-    final bytes = Uint8List.fromList(img.encodeJpg(rotated));
+    // 3. Encode to JPG (Reduced quality for performance)
+    final bytes = Uint8List.fromList(img.encodeJpg(rotated, quality: 85));
 
     return {
       'bytes': bytes,
@@ -450,14 +463,14 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
   }
 
 
-  Future<void> captureAndProcess(BuildContext context) async {
+  Future<void> captureAndProcess(BuildContext context, {String? initialStatus, bool clearMatchedFace = true}) async {
     if (state.isScanning) return;
 
     state = state.copyWith(
       isScanning: true,
       scanProgress: 0.1,
-      scanStatus: 'CAPTURING',
-      clearMatchedFace: true,
+      scanStatus: initialStatus ?? 'CAPTURING',
+      clearMatchedFace: clearMatchedFace,
     );
 
     try {
@@ -507,7 +520,63 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
     final repository = FaceRepositoryImpl(dataSource);
 
     if (face.id != null) {
-      await repository.updateFace(face);
+      // Check if we are adding a new embedding or just updating profile
+      final existingFaces = await repository.getAllFaces();
+      final existing = existingFaces.firstWhere((f) => f.id == face.id);
+
+      // If the provided face has a new embedding (not in existing), add it
+      bool isNewEmbedding = true;
+      for (var emb in existing.embeddings) {
+        if (emb.length == face.embeddings.first.length) {
+          double sim = SimilarityUtils.cosineSimilarity(face.embeddings.first, emb);
+          if (sim > 0.99) {
+            isNewEmbedding = false;
+            break;
+          }
+        }
+      }
+
+      if (isNewEmbedding) {
+        final mergedEmbeddings = List<List<double>>.from(existing.embeddings)..addAll(face.embeddings);
+        final updatedFace = FaceEntity(
+          id: face.id,
+          name: face.name,
+          embeddings: mergedEmbeddings,
+          modelUsed: face.modelUsed,
+          photoPath: face.photoPath,
+          photoBytes: face.photoBytes,
+          timestamp: face.timestamp,
+          age: face.age,
+          occupation: face.occupation,
+          incomeLevel: face.incomeLevel,
+          riskScore: face.riskScore,
+          personalityTraits: face.personalityTraits,
+          birthDate: face.birthDate,
+          height: face.height,
+          weight: face.weight,
+        );
+        await repository.updateFace(updatedFace);
+      } else {
+        // Just update metadata, but keep all existing embeddings
+        final updatedFace = FaceEntity(
+          id: face.id,
+          name: face.name,
+          embeddings: existing.embeddings, // Keep existing!
+          modelUsed: face.modelUsed,
+          photoPath: face.photoPath,
+          photoBytes: face.photoBytes,
+          timestamp: face.timestamp,
+          age: face.age,
+          occupation: face.occupation,
+          incomeLevel: face.incomeLevel,
+          riskScore: face.riskScore,
+          personalityTraits: face.personalityTraits,
+          birthDate: face.birthDate,
+          height: face.height,
+          weight: face.weight,
+        );
+        await repository.updateFace(updatedFace);
+      }
     } else {
       await _registerFace.execute(face);
     }
@@ -572,6 +641,7 @@ class CameraControllerNotifier extends StateNotifier<CameraState> {
               imageFile: permanentFile,
               face: face,
               embedding: embedding,
+              existingFace: state.matchedFace,
             ),
           ),
         );

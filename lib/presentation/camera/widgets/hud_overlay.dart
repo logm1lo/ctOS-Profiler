@@ -52,32 +52,55 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
     return Stack(
       children: [
         // Layer 1: Glitch effect
-        AnimatedBuilder(
-          animation: _scanlineController,
-          builder: (context, child) {
-            return CustomPaint(
-              size: Size.infinite,
-              painter: GlitchPainter(progress: _scanlineController.value),
-            );
-          },
+        IgnorePointer(
+          child: AnimatedBuilder(
+            animation: _scanlineController,
+            builder: (context, child) {
+              return CustomPaint(
+                size: Size.infinite,
+                painter: GlitchPainter(progress: _scanlineController.value),
+              );
+            },
+          ),
         ),
 
         // Layer 2: Scanline
-        AnimatedBuilder(
-          animation: _scanlineController,
-          builder: (context, child) {
-            return CustomPaint(
-              size: Size.infinite,
-              painter: ScanlinePainter(
-                progress: _scanlineController.value,
-                color: AppColors.getScanLine(theme),
-              ),
-            );
-          },
+        IgnorePointer(
+          child: AnimatedBuilder(
+            animation: _scanlineController,
+            builder: (context, child) {
+              return CustomPaint(
+                size: Size.infinite,
+                painter: ScanlinePainter(
+                  progress: _scanlineController.value,
+                  color: AppColors.getScanLine(theme),
+                ),
+              );
+            },
+          ),
         ),
 
         // Layer 3: Face Target HUD
-        FaceTargetGuide(animation: _pulseController),
+        IgnorePointer(child: FaceTargetGuide(animation: _pulseController)),
+
+        // Real-time Bounding Boxes
+        if (cameraState.isInitialized && cameraState.detectedFaces.isNotEmpty)
+          IgnorePointer(
+            child: CustomPaint(
+              size: Size.infinite,
+              painter: FaceBBoxPainter(
+                cameraState.detectedFaces,
+                Size(
+                  cameraState.controller!.value.previewSize!.height,
+                  cameraState.controller!.value.previewSize!.width,
+                ),
+                matchedFace: cameraState.matchedFace,
+                isFrontCamera: cameraState.isFrontCamera,
+                accentColor: accentColor,
+                privacyMode: settings.privacyMode,
+              ),
+            ),
+          ),
 
         // Register Target Button (Center Screen)
         if (cameraState.scanStatus == 'NEW TARGET DETECTED')
@@ -94,40 +117,36 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
         // Match Info (Center Screen)
         if (cameraState.matchedFace != null && !cameraState.isScanning)
           Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: theme == AppTheme.watchDogs
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : AppColors.getSurface(theme).withValues(alpha: 0.8),
-                border: Border.all(color: accentColor, width: 1.5),
-              ),
-              child: Text(
-                'MATCH: ${cameraState.matchedFace!.name.toUpperCase()}',
-                style: AppTextStyles.hudStatus(theme).copyWith(
-                  color: theme == AppTheme.watchDogs ? Colors.black : accentColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: theme == AppTheme.watchDogs
+                        ? Colors.white.withValues(alpha: 0.9)
+                        : AppColors.getSurface(theme).withValues(alpha: 0.8),
+                    border: Border.all(color: accentColor, width: 1.5),
+                  ),
+                  child: Text(
+                    'MATCH: ${cameraState.matchedFace!.name.toUpperCase()}',
+                    style: AppTextStyles.hudStatus(theme).copyWith(
+                      color: theme == AppTheme.watchDogs ? Colors.black : accentColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-
-        // Real-time Bounding Boxes
-        if (cameraState.isInitialized && cameraState.detectedFaces.isNotEmpty)
-          CustomPaint(
-            size: Size.infinite,
-            painter: FaceBBoxPainter(
-              cameraState.detectedFaces,
-              Size(
-                cameraState.controller!.value.previewSize!.height,
-                cameraState.controller!.value.previewSize!.width,
-              ),
-              matchedFace: cameraState.matchedFace,
-              isFrontCamera: cameraState.isFrontCamera,
-              accentColor: accentColor,
-              privacyMode: settings.privacyMode,
+                const SizedBox(height: 16),
+                GlitchyButton(
+                  onPressed: () {
+                    debugPrint('ctOS_LOG: Refine Profile button pressed');
+                    _refineTarget(context, ref);
+                  },
+                  label: 'REFINE PROFILE?',
+                ),
+              ],
             ),
           ),
 
@@ -216,5 +235,21 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
 
     // To register, we need a high-quality capture
     await ref.read(cameraProvider.notifier).captureAndProcess(context);
+  }
+
+  Future<void> _refineTarget(BuildContext context, WidgetRef ref) async {
+    final cameraState = ref.read(cameraProvider);
+    if (cameraState.matchedFace == null) return;
+
+    // Set mode to register to trigger the profiling screen after capture
+    // Preserve the matchedFace so it can be passed to the profiling screen!
+    ref.read(cameraProvider.notifier).setMode(AppMode.register, clearMatchedFace: false);
+
+    // captureAndProcess will navigate to profiling screen because mode is register
+    await ref.read(cameraProvider.notifier).captureAndProcess(
+      context,
+      initialStatus: 'REFINING PROFILE',
+      clearMatchedFace: false,
+    );
   }
 }

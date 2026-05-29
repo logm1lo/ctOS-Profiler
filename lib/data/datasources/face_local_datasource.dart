@@ -18,7 +18,7 @@ class FaceLocalDataSource {
     final path = join(await getDatabasesPath(), 'ctos_faces.db');
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) {
         return db.execute(
           '''
@@ -42,28 +42,32 @@ class FaceLocalDataSource {
           ''',
         );
       },
-      onUpgrade: (db, oldVersion, newVersion) {
+      onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
-          db.execute('ALTER TABLE registered_faces ADD COLUMN age INTEGER');
-          db.execute('ALTER TABLE registered_faces ADD COLUMN occupation TEXT');
-          db.execute('ALTER TABLE registered_faces ADD COLUMN income_level TEXT');
-          db.execute('ALTER TABLE registered_faces ADD COLUMN risk_score INTEGER');
-          db.execute('ALTER TABLE registered_faces ADD COLUMN personality_traits TEXT');
+          await db.execute('ALTER TABLE registered_faces ADD COLUMN age INTEGER');
+          await db.execute('ALTER TABLE registered_faces ADD COLUMN occupation TEXT');
+          await db.execute('ALTER TABLE registered_faces ADD COLUMN income_level TEXT');
+          await db.execute('ALTER TABLE registered_faces ADD COLUMN risk_score INTEGER');
+          await db.execute('ALTER TABLE registered_faces ADD COLUMN personality_traits TEXT');
         }
         if (oldVersion < 3) {
-           _addColumnIfNotExists(db, 'registered_faces', 'age', 'INTEGER');
-           _addColumnIfNotExists(db, 'registered_faces', 'occupation', 'TEXT');
-           _addColumnIfNotExists(db, 'registered_faces', 'income_level', 'TEXT');
-           _addColumnIfNotExists(db, 'registered_faces', 'risk_score', 'INTEGER');
-           _addColumnIfNotExists(db, 'registered_faces', 'personality_traits', 'TEXT');
+           await _addColumnIfNotExists(db, 'registered_faces', 'age', 'INTEGER');
+           await _addColumnIfNotExists(db, 'registered_faces', 'occupation', 'TEXT');
+           await _addColumnIfNotExists(db, 'registered_faces', 'income_level', 'TEXT');
+           await _addColumnIfNotExists(db, 'registered_faces', 'risk_score', 'INTEGER');
+           await _addColumnIfNotExists(db, 'registered_faces', 'personality_traits', 'TEXT');
         }
         if (oldVersion < 4) {
-          _addColumnIfNotExists(db, 'registered_faces', 'birth_date', 'TEXT');
-          _addColumnIfNotExists(db, 'registered_faces', 'height', 'REAL');
-          _addColumnIfNotExists(db, 'registered_faces', 'weight', 'REAL');
+          await _addColumnIfNotExists(db, 'registered_faces', 'birth_date', 'TEXT');
+          await _addColumnIfNotExists(db, 'registered_faces', 'height', 'REAL');
+          await _addColumnIfNotExists(db, 'registered_faces', 'weight', 'REAL');
         }
         if (oldVersion < 5) {
-          _addColumnIfNotExists(db, 'registered_faces', 'photo_bytes', 'BLOB');
+          await _addColumnIfNotExists(db, 'registered_faces', 'photo_bytes', 'BLOB');
+        }
+        if (oldVersion < 6) {
+          // No structural change, but we might want to ensure 'embedding' format is handled.
+          // The current code already handles both old (List<double>) and new (List<List<double>>) JSON formats in FaceRecord.fromMap
         }
       },
     );

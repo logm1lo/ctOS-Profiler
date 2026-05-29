@@ -3,7 +3,7 @@ import 'dart:typed_data';
 class FaceEntity {
   final int? id;
   final String name;
-  final List<double> embedding;
+  final List<List<double>> embeddings;
   final String modelUsed;
   final String photoPath;
   final Uint8List? photoBytes;
@@ -22,7 +22,7 @@ class FaceEntity {
   FaceEntity({
     this.id,
     required this.name,
-    required this.embedding,
+    required this.embeddings,
     required this.modelUsed,
     required this.photoPath,
     this.photoBytes,
@@ -41,7 +41,7 @@ class FaceEntity {
     return {
       'id': id,
       'name': name,
-      'embedding': embedding.join(','),
+      'embeddings': embeddings.map((e) => e.join(',')).join('|'),
       'model_used': modelUsed,
       'photo_path': photoPath,
       'photo_bytes': photoBytes,
@@ -58,12 +58,25 @@ class FaceEntity {
   }
 
   factory FaceEntity.fromMap(Map<String, dynamic> map) {
+    List<List<double>> embeddingsList = [];
+    if (map['embeddings'] != null && map['embeddings'] is String) {
+      embeddingsList = (map['embeddings'] as String)
+          .split('|')
+          .where((s) => s.isNotEmpty)
+          .map((s) => s.split(',').map((e) => double.parse(e)).toList())
+          .toList();
+    } else if (map['embedding'] != null) {
+      if (map['embedding'] is String) {
+        embeddingsList = [(map['embedding'] as String).split(',').map((e) => double.parse(e)).toList()];
+      } else if (map['embedding'] is List) {
+        embeddingsList = [(map['embedding'] as List).cast<double>()];
+      }
+    }
+
     return FaceEntity(
       id: map['id'],
       name: map['name'],
-      embedding: map['embedding'] is String
-        ? (map['embedding'] as String).split(',').map((e) => double.parse(e)).toList()
-        : (map['embedding'] as List).cast<double>(),
+      embeddings: embeddingsList,
       modelUsed: map['model_used'] ?? '',
       photoPath: map['photo_path'] ?? '',
       photoBytes: map['photo_bytes'],
@@ -78,5 +91,4 @@ class FaceEntity {
       weight: map['weight']?.toDouble(),
     );
   }
-
 }

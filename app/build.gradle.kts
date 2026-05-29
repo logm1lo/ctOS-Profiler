@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.logm1lo.ctos"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "25.1.8937393"
 
     // Ensure generated plugin registration is included

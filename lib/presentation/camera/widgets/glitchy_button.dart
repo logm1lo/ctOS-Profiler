@@ -73,18 +73,22 @@ class _GlitchyButtonState extends ConsumerState<GlitchyButton> with SingleTicker
           alignment: Alignment.center,
           children: [
             if (_isGlitching) ...[
-              Transform.translate(
-                offset: Offset(offset, 0),
-                child: _buildButton(context, accentColor.withValues(alpha: 0.3), theme, accentColor),
+              IgnorePointer(
+                child: Transform.translate(
+                  offset: Offset(offset, 0),
+                  child: _buildButton(context, accentColor.withValues(alpha: 0.3), theme, accentColor, isInteractive: false),
+                ),
               ),
-              Transform.translate(
-                offset: Offset(-offset, 0),
-                child: _buildButton(context, secondaryColor.withValues(alpha: 0.3), theme, accentColor),
+              IgnorePointer(
+                child: Transform.translate(
+                  offset: Offset(-offset, 0),
+                  child: _buildButton(context, secondaryColor.withValues(alpha: 0.3), theme, accentColor, isInteractive: false),
+                ),
               ),
             ],
             Opacity(
               opacity: opacity,
-              child: _buildButton(context, Colors.transparent, theme, accentColor),
+              child: _buildButton(context, Colors.transparent, theme, accentColor, isInteractive: true),
             ),
           ],
         );
@@ -92,10 +96,10 @@ class _GlitchyButtonState extends ConsumerState<GlitchyButton> with SingleTicker
     );
   }
 
-  Widget _buildButton(BuildContext context, Color overlayColor, AppTheme theme, Color accentColor) {
+  Widget _buildButton(BuildContext context, Color overlayColor, AppTheme theme, Color accentColor, {required bool isInteractive}) {
     final baseColor = overlayColor.a > 0 ? overlayColor : accentColor;
     return OutlinedButton(
-      onPressed: widget.onPressed,
+      onPressed: isInteractive ? widget.onPressed : null,
       style: OutlinedButton.styleFrom(
         backgroundColor: accentColor.withValues(alpha: 0.1).withAlpha((overlayColor.a * 255.0).round().clamp(0, 255) > 0 ? (overlayColor.a * 255.0).round().clamp(0, 255) : 25),
         side: BorderSide(color: baseColor, width: 2),
