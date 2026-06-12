@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,32 +31,41 @@ class TargetProfilingScreen extends ConsumerStatefulWidget {
 }
 
 class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> with SingleTickerProviderStateMixin {
+  static const String TAG = "TargetProfilingScreen";
   late TextEditingController _nameController;
   late TextEditingController _occupationController;
   late TextEditingController _ageController;
   late TextEditingController _birthDateController;
   late TextEditingController _heightController;
   late TextEditingController _weightController;
+  late TextEditingController _hobbyController;
+  late TextEditingController _secretController;
+  late TextEditingController _historyController;
 
   late String _incomeLevel;
   late int _riskScore;
+  late bool _isPoi;
   late List<String> _selectedTraits;
   late AnimationController _scanlineController;
 
   @override
   void initState() {
+    developer.log('[initState] → Entry', name: TAG);
     super.initState();
-    final settings = ref.read(settingsProvider);
     _nameController = TextEditingController(text: widget.existingFace?.name ?? '');
     _occupationController = TextEditingController(text: widget.existingFace?.occupation ?? '');
-    _ageController = TextEditingController(text: widget.existingFace?.age?.toString() ?? '25');
+    _ageController = TextEditingController(text: widget.existingFace?.age?.toString() ?? '');
     _birthDateController = TextEditingController(text: widget.existingFace?.birthDate ?? '');
 
     _heightController = TextEditingController(text: widget.existingFace?.height?.toString() ?? '');
     _weightController = TextEditingController(text: widget.existingFace?.weight?.toString() ?? '');
+    _hobbyController = TextEditingController(text: widget.existingFace?.hobby ?? '');
+    _secretController = TextEditingController(text: widget.existingFace?.secret ?? '');
+    _historyController = TextEditingController(text: widget.existingFace?.recentHistory?.join(', ') ?? '');
 
-    _incomeLevel = widget.existingFace?.incomeLevel ?? 'MIDDLE';
-    _riskScore = widget.existingFace?.riskScore ?? 15;
+    _incomeLevel = widget.existingFace?.incomeLevel ?? 'UNKNOWN';
+    _riskScore = widget.existingFace?.riskScore ?? 0;
+    _isPoi = widget.existingFace?.isPoi ?? false;
     _selectedTraits = List.from(widget.existingFace?.personalityTraits ?? []);
 
     _scanlineController = AnimationController(
@@ -66,12 +76,16 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
 
   @override
   void dispose() {
+    developer.log('[dispose] → Entry', name: TAG);
     _nameController.dispose();
     _occupationController.dispose();
     _ageController.dispose();
     _birthDateController.dispose();
     _heightController.dispose();
     _weightController.dispose();
+    _hobbyController.dispose();
+    _secretController.dispose();
+    _historyController.dispose();
     _scanlineController.dispose();
     super.dispose();
   }
@@ -121,6 +135,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
                   _buildImagePreview(accentColor),
                   const SizedBox(height: 20),
                   _buildSectionTitle('IDENTIFICATION', theme, accentColor),
+                  _buildPoiToggle(accentColor, theme),
                   _buildTextField('NAME', _nameController, theme, accentColor, textColor),
                   Row(
                     children: [
@@ -138,6 +153,11 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
                   _buildSectionTitle('RISK ASSESSMENT', theme, accentColor),
                   _buildRiskSlider(theme, accentColor),
                   const SizedBox(height: 20),
+                  _buildSectionTitle('BEHAVIORAL DATA', theme, accentColor),
+                  _buildTextField('HOBBY', _hobbyController, theme, accentColor, textColor),
+                  _buildTextField('SECRET', _secretController, theme, accentColor, textColor),
+                  _buildTextField('RECENT HISTORY (COMMA SEPARATED)', _historyController, theme, accentColor, textColor),
+                  const SizedBox(height: 20),
                   _buildSectionTitle('PERSONALITY PROFILE', theme, accentColor),
                   _buildTraitsSection('POSITIVE', _positiveTraits, AppColors.getSecondaryAccent(theme)),
                   const SizedBox(height: 12),
@@ -148,6 +168,41 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPoiToggle(Color color, AppTheme theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: _isPoi ? Colors.redAccent : color.withValues(alpha: 0.3)),
+        color: _isPoi ? Colors.redAccent.withValues(alpha: 0.1) : Colors.transparent,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(_isPoi ? Icons.warning : Icons.person_search, color: _isPoi ? Colors.redAccent : color, size: 18),
+              const SizedBox(width: 12),
+              Text(
+                'POI WATCHLIST',
+                style: AppTextStyles.hudStatus(theme).copyWith(color: _isPoi ? Colors.redAccent : color, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          Switch(
+            value: _isPoi,
+            onChanged: (v) {
+              developer.log('[Interaction] → POI watchlist toggled: $v', name: TAG);
+              setState(() => _isPoi = v);
+            },
+            activeColor: Colors.redAccent,
+            activeTrackColor: Colors.redAccent.withValues(alpha: 0.3),
           ),
         ],
       ),
@@ -283,6 +338,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
           Text(label, style: AppTextStyles.hudStatus(theme).copyWith(color: Colors.grey, fontSize: 10)),
           InkWell(
             onTap: () async {
+              developer.log('[Interaction] → Opening date picker', name: TAG);
               DateTime? picked = await showDatePicker(
                 context: context,
                 initialDate: DateTime.now(),
@@ -303,6 +359,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
                 ),
               );
               if (picked != null) {
+                developer.log('[Interaction] → Date selected: $picked', name: TAG);
                 setState(() {
                   controller.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
                 });
@@ -344,7 +401,10 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
           value: _riskScore.toDouble(),
           min: 0,
           max: 100,
-          onChanged: (v) => setState(() => _riskScore = v.toInt()),
+          onChanged: (v) {
+            developer.log('[Interaction] → Risk score adjusted to ${v.toInt()}%', name: TAG);
+            setState(() => _riskScore = v.toInt());
+          },
           activeColor: isHighRisk ? highRiskColor : accentColor,
           inactiveColor: Colors.grey.withValues(alpha: 0.2),
         ),
@@ -365,6 +425,7 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
             final isSelected = _selectedTraits.contains(trait);
             return GestureDetector(
               onTap: () {
+                developer.log('[Interaction] → Personality trait toggled: $trait (active=$isSelected)', name: TAG);
                 setState(() {
                   if (isSelected) {
                     _selectedTraits.remove(trait);
@@ -406,7 +467,10 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
             style: TextStyle(color: textColor, fontSize: 14, fontFamily: 'monospace'),
             underline: Container(height: 0.5, color: accentColor),
             items: items.map((i) => DropdownMenuItem(value: i, child: Text(i))).toList(),
-            onChanged: onChanged,
+            onChanged: (val) {
+              developer.log('[Interaction] → $label changed to $val', name: TAG);
+              onChanged(val);
+            },
           ),
         ],
       ),
@@ -440,7 +504,11 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
 
   void _save(BuildContext context) async {
     final name = _nameController.text;
-    if (name.isEmpty) return;
+    developer.log('[_save] → Entry: targetName=$name', name: TAG);
+    if (name.isEmpty) {
+      developer.log('[_save] → Exit: Name is empty, validation failed', name: TAG);
+      return;
+    }
 
     final settings = ref.read(settingsProvider);
     double? height;
@@ -473,11 +541,21 @@ class _TargetProfilingScreenState extends ConsumerState<TargetProfilingScreen> w
         birthDate: _birthDateController.text,
         height: height,
         weight: weight,
+        hobby: _hobbyController.text,
+        secret: _secretController.text,
+        recentHistory: _historyController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+        socialLinks: widget.existingFace?.socialLinks,
+        aliases: widget.existingFace?.aliases,
+        digitalFootprintSummary: widget.existingFace?.digitalFootprintSummary,
+        isPoi: _isPoi,
       );
 
+      developer.log('[_save] → Status: Submitting target profile to repository', name: TAG);
       await ref.read(cameraProvider.notifier).saveFace(newFace);
+      developer.log('[_save] → Exit: Target profile synchronized', name: TAG);
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
+      developer.log('[_save] → Error: Failed to commit profile: $e', name: TAG, error: e);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving profile: $e')),

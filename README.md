@@ -35,7 +35,7 @@ ctOS - Profiler is a mobile application inspired by the *Watch Dogs* series. It 
 * **AI Engine:** LiteRT (TensorFlow Lite / `face_detection_tflite`)
 * **Computer Vision:** Optimized image processing pipeline.
 * **Database:** sqflite (SQLite)
-* **Build System:** Gradle (AGP 8.6.0), Java 17
+* **Build System:** Gradle (AGP 8.9.1), Java 17
 * **State Management:** Riverpod (v2)
 
 ## Quick Start
@@ -107,7 +107,7 @@ The project follows a **Clean Architecture** pattern with a clear separation of 
 ## Common Errors
 
 ### AGP Version Conflict
-If you see errors regarding Android Gradle Plugin (AGP) version 8.6.0, ensure your environment supports this version or run with `--android-skip-build-dependency-validation`.
+If you see errors regarding Android Gradle Plugin (AGP) version 8.9.1, ensure your environment supports this version or run with `--android-skip-build-dependency-validation`.
 
 ### NDK Path Issues
 Ensure `ndk.dir` or `sdk.dir` is correctly set in `local.properties`. Version **25.1.8937393** is strictly required for certain native bindings.

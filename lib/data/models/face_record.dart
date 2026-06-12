@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import '../../domain/entities/face_entity.dart';
 
 class FaceRecord extends FaceEntity {
+  static const String TAG = "FaceRecord";
+
   FaceRecord({
     super.id,
     required super.name,
@@ -18,10 +21,18 @@ class FaceRecord extends FaceEntity {
     super.birthDate,
     super.height,
     super.weight,
+    super.hobby,
+    super.secret,
+    super.recentHistory,
+    super.socialLinks,
+    super.aliases,
+    super.digitalFootprintSummary,
+    super.isPoi,
   });
 
   @override
   Map<String, dynamic> toMap() {
+    // developer.log('[toMap] → Entry: name=$name', name: TAG);
     return {
       'id': id,
       'name': name,
@@ -38,21 +49,31 @@ class FaceRecord extends FaceEntity {
       'birth_date': birthDate,
       'height': height,
       'weight': weight,
+      'hobby': hobby,
+      'secret': secret,
+      'recent_history': recentHistory != null ? jsonEncode(recentHistory) : null,
+      'social_links': socialLinks != null ? jsonEncode(socialLinks) : null,
+      'aliases': aliases != null ? jsonEncode(aliases) : null,
+      'digital_footprint_summary': digitalFootprintSummary,
+      'is_poi': isPoi ? 1 : 0,
     };
   }
 
   factory FaceRecord.fromMap(Map<String, dynamic> map) {
+    // developer.log('[fromMap] → Entry: id=${map['id']}', name: TAG);
     List<List<double>> embeddingsList = [];
     if (map['embedding'] is String) {
-      final decoded = jsonDecode(map['embedding']);
-      if (decoded is List) {
-        if (decoded.isNotEmpty && decoded.first is List) {
-          // New format: List<List<double>>
-          embeddingsList = decoded.map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList();
-        } else {
-          // Old format: List<double>
-          embeddingsList = [(decoded).map((e) => (e as num).toDouble()).toList()];
+      try {
+        final decoded = jsonDecode(map['embedding']);
+        if (decoded is List) {
+          if (decoded.isNotEmpty && decoded.first is List) {
+            embeddingsList = decoded.map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList();
+          } else {
+            embeddingsList = [(decoded).map((e) => (e as num).toDouble()).toList()];
+          }
         }
+      } catch (e) {
+        developer.log('[fromMap] → Error decoding embedding: $e', name: TAG);
       }
     }
 
@@ -60,10 +81,10 @@ class FaceRecord extends FaceEntity {
       id: map['id'],
       name: map['name'],
       embeddings: embeddingsList,
-      modelUsed: map['model_used'],
-      photoPath: map['photo_path'],
+      modelUsed: map['model_used'] ?? '',
+      photoPath: map['photo_path'] ?? '',
       photoBytes: map['photo_bytes'],
-      timestamp: map['timestamp'],
+      timestamp: map['timestamp'] ?? 0,
       age: map['age'],
       occupation: map['occupation'],
       incomeLevel: map['income_level'],
@@ -74,6 +95,19 @@ class FaceRecord extends FaceEntity {
       birthDate: map['birth_date'],
       height: map['height']?.toDouble(),
       weight: map['weight']?.toDouble(),
+      hobby: map['hobby'],
+      secret: map['secret'],
+      recentHistory: map['recent_history'] != null
+          ? (jsonDecode(map['recent_history']) as List).map((e) => e as String).toList()
+          : null,
+      socialLinks: map['social_links'] != null
+          ? (jsonDecode(map['social_links']) as List).map((e) => e as String).toList()
+          : null,
+      aliases: map['aliases'] != null
+          ? (jsonDecode(map['aliases']) as List).map((e) => e as String).toList()
+          : null,
+      digitalFootprintSummary: map['digital_footprint_summary'],
+      isPoi: (map['is_poi'] ?? 0) == 1,
     );
   }
 
@@ -94,6 +128,13 @@ class FaceRecord extends FaceEntity {
       birthDate: entity.birthDate,
       height: entity.height,
       weight: entity.weight,
+      hobby: entity.hobby,
+      secret: entity.secret,
+      recentHistory: entity.recentHistory,
+      socialLinks: entity.socialLinks,
+      aliases: entity.aliases,
+      digitalFootprintSummary: entity.digitalFootprintSummary,
+      isPoi: entity.isPoi,
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'core/theme/colors.dart';
 import 'presentation/home/home_screen.dart';
@@ -7,6 +8,7 @@ class CtOSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    developer.log('ctOS_TRACE: CtOSApp.build() triggered');
     return MaterialApp(
       title: 'ctOS',
       debugShowCheckedModeBanner: false,

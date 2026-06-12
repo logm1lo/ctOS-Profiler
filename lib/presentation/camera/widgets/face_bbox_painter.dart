@@ -10,6 +10,7 @@ class FaceBBoxPainter extends CustomPainter {
   final bool isFrontCamera;
   final Color? accentColor;
   final bool privacyMode;
+  final bool isPoiTrackerActive;
 
   FaceBBoxPainter(
     this.faces,
@@ -18,6 +19,7 @@ class FaceBBoxPainter extends CustomPainter {
     this.isFrontCamera = true,
     this.accentColor,
     this.privacyMode = false,
+    this.isPoiTrackerActive = false,
   });
 
   @override
@@ -38,19 +40,29 @@ class FaceBBoxPainter extends CustomPainter {
 
     for (final face in faces) {
       final rect = _scaleRect(face.boundingBox, size, absoluteImageSize);
+      bool isMatch = matchedFace != null;
+      bool isPoiTarget = isPoiTrackerActive && (matchedFace?.isPoi ?? false);
 
-      if (privacyMode && matchedFace == null) {
+      if (privacyMode && !isMatch) {
         canvas.drawRect(rect, blurPaint);
       }
 
-      canvas.drawRect(rect, paint);
+      // Draw main box
+      final boxPaint = isPoiTarget ? (paint..strokeWidth = 3.0..color = Colors.redAccent) : paint;
 
       // Draw corners with neon glow
-      _drawNeonCorners(canvas, rect, activeColor);
+      _drawNeonCorners(canvas, rect, isPoiTarget ? Colors.redAccent : activeColor);
+
+      if (isPoiTarget) {
+        _drawTargetIndicators(canvas, rect, Colors.redAccent);
+        _drawPoiLabel(canvas, rect, matchedFace?.name ?? 'UNKNOWN_POI');
+      } else {
+        canvas.drawRect(rect, boxPaint);
+      }
 
       // Draw mesh if available
       if (face.mesh != null) {
-        _drawFaceMesh(canvas, face.mesh!, size, absoluteImageSize, activeColor);
+        _drawFaceMesh(canvas, face.mesh!, size, absoluteImageSize, isPoiTarget ? Colors.redAccent : activeColor);
       } else {
         // Draw landmarks as backup
         for (final landmark in face.landmarks.values) {
@@ -59,6 +71,45 @@ class FaceBBoxPainter extends CustomPainter {
         }
       }
     }
+  }
+
+  void _drawPoiLabel(Canvas canvas, Rect rect, String name) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: '${name.toUpperCase()} // THREAT: CRITICAL',
+        style: const TextStyle(
+          color: Colors.redAccent,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'monospace',
+          backgroundColor: Colors.black87,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    // Move label to top right of rect to avoid bottom HUD
+    textPainter.paint(canvas, Offset(rect.right + 5, rect.top));
+  }
+
+  void _drawTargetIndicators(Canvas canvas, Rect rect, Color color) {
+    final tPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = color;
+
+    // Draw crosshair-like triangles at midpoints
+    const side = 10.0;
+    final path = Path();
+
+    // Top
+    final centerTopX = rect.left + rect.width / 2;
+    final centerTopY = rect.top;
+    path.moveTo(centerTopX, centerTopY);
+    path.lineTo(centerTopX - side/2, centerTopY - side);
+    path.lineTo(centerTopX + side/2, centerTopY - side);
+    path.close();
+
+    canvas.drawPath(path, tPaint);
   }
 
   void _drawFaceMesh(Canvas canvas, fdt.FaceMesh mesh, Size size, Size absoluteImageSize, Color color) {

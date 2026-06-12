@@ -2,6 +2,7 @@ package io.flutter.plugins;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import io.flutter.Log;
 
 import io.flutter.embedding.engine.FlutterEngine;
 
@@ -12,56 +13,107 @@ import io.flutter.embedding.engine.FlutterEngine;
  */
 @Keep
 public final class GeneratedPluginRegistrant {
+  private static final String TAG = "GeneratedPluginRegistrant";
   public static void registerWith(@NonNull FlutterEngine flutterEngine) {
     try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.camera.CameraPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin camera_android: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin camera_android, io.flutter.plugins.camera.CameraPlugin", e);
     }
     try {
-      flutterEngine.getPlugins().add(new com.hugocornellier.face_detection_tflite.FaceDetectionTflitePlugin());
+      flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.battery.BatteryPlusPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin face_detection_tflite: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin battery_plus, dev.fluttercommunity.plus.battery.BatteryPlusPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.ado.cellular_info.CellularInfoPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin cellular_info, com.ado.cellular_info.CellularInfoPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.device_info.DeviceInfoPlusPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin device_info_plus, dev.fluttercommunity.plus.device_info.DeviceInfoPlusPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new com.mr.flutter.plugin.filepicker.FilePickerPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin file_picker: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin file_picker, com.mr.flutter.plugin.filepicker.FilePickerPlugin", e);
     }
     try {
-      flutterEngine.getPlugins().add(new com.hugocornellier.flutter_litert.FlutterLitertPlugin());
+      flutterEngine.getPlugins().add(new com.lib.flutter_blue_plus.FlutterBluePlusPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin flutter_litert: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin flutter_blue_plus_android, com.lib.flutter_blue_plus.FlutterBluePlusPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new im.nfc.flutter_nfc_kit.FlutterNfcKitPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin flutter_nfc_kit, im.nfc.flutter_nfc_kit.FlutterNfcKitPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin flutter_plugin_android_lifecycle: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin flutter_plugin_android_lifecycle, io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.baseflow.geolocator.GeolocatorPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin geolocator_android, com.baseflow.geolocator.GeolocatorPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.imagepicker.ImagePickerPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin image_picker_android: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin image_picker_android, io.flutter.plugins.imagepicker.ImagePickerPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new com.github.dart_lang.jni.JniPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin jni: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin jni, com.github.dart_lang.jni.JniPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new com.github.dart_lang.jni_flutter.JniFlutterPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin jni_flutter: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin jni_flutter, com.github.dart_lang.jni_flutter.JniFlutterPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.network_info.NetworkInfoPlusPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin network_info_plus, dev.fluttercommunity.plus.network_info.NetworkInfoPlusPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.packageinfo.PackageInfoPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin package_info_plus, dev.fluttercommunity.plus.packageinfo.PackageInfoPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.baseflow.permissionhandler.PermissionHandlerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin permission_handler_android, com.baseflow.permissionhandler.PermissionHandlerPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin shared_preferences_android: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin shared_preferences_android, io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new com.tekartik.sqflite.SqflitePlugin());
     } catch (Exception e) {
-      System.err.println("Error registering plugin sqflite_android: " + e.getMessage());
+      Log.e(TAG, "Error registering plugin sqflite_android, com.tekartik.sqflite.SqflitePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.urllauncher.UrlLauncherPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin url_launcher_android, io.flutter.plugins.urllauncher.UrlLauncherPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.hugocornellier.face_detection_tflite.FaceDetectionTflitePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin face_detection_tflite, com.hugocornellier.face_detection_tflite.FaceDetectionTflitePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.hugocornellier.flutter_litert.FlutterLitertPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin flutter_litert, com.hugocornellier.flutter_litert.FlutterLitertPlugin", e);
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/colors.dart';
@@ -5,6 +6,7 @@ import '../../core/theme/text_styles.dart';
 import '../../core/providers/settings_provider.dart';
 
 class NeonButton extends ConsumerWidget {
+  static const String TAG = "NeonButton";
   final String label;
   final VoidCallback onPressed;
   final IconData? icon;
@@ -20,6 +22,7 @@ class NeonButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // developer.log('[build] → Entry: label=$label', name: TAG);
     final settings = ref.watch(settingsProvider);
     final accentColor = AppColors.getAccent(settings.theme);
     final backgroundColor = isSecondary ? Colors.transparent : accentColor.withValues(alpha: 0.1);
@@ -29,9 +32,15 @@ class NeonButton extends ConsumerWidget {
       button: true,
       enabled: true,
       child: GestureDetector(
-        onTap: onPressed,
+        onTap: () {
+          developer.log('[Interaction] → $label action triggered', name: TAG);
+          onPressed();
+        },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: isSecondary ? 6 : 12,
+          ),
           decoration: BoxDecoration(
             color: backgroundColor,
             border: Border.all(

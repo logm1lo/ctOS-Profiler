@@ -23,7 +23,7 @@ class FaceTargetGuide extends ConsumerWidget {
           children: [
             Center(
               child: CustomPaint(
-                size: const Size(280, 380),
+                size: const Size(240, 340), // Made slightly smaller to avoid overlap
                 painter: TargetOvalPainter(
                   opacity: animation.value,
                   color: accentColor,
@@ -43,26 +43,26 @@ class FaceTargetGuide extends ConsumerWidget {
                 ),
               ),
             ),
-            // Corners
-            _buildCorner(Alignment.topLeft, 0, accentColor),
-            _buildCorner(Alignment.topRight, pi / 2, accentColor),
-            _buildCorner(Alignment.bottomLeft, -pi / 2, accentColor),
-            _buildCorner(Alignment.bottomRight, pi, accentColor),
+            // Corners - moved further from edges to avoid overlapping with HUD elements
+            _buildCorner(Alignment.topLeft, 0, accentColor, 80),
+            _buildCorner(Alignment.topRight, pi / 2, accentColor, 80),
+            _buildCorner(Alignment.bottomLeft, -pi / 2, accentColor, 160),
+            _buildCorner(Alignment.bottomRight, pi, accentColor, 160),
           ],
         );
       },
     );
   }
 
-  Widget _buildCorner(Alignment alignment, double angle, Color color) {
+  Widget _buildCorner(Alignment alignment, double angle, Color color, double padding) {
     return Align(
       alignment: alignment,
       child: Padding(
-        padding: const EdgeInsets.all(40.0),
+        padding: EdgeInsets.all(padding),
         child: Transform.rotate(
           angle: angle,
           child: CustomPaint(
-            size: const Size(40, 40),
+            size: const Size(30, 30),
             painter: CornerPainter(opacity: animation.value, color: color),
           ),
         ),

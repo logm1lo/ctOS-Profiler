@@ -1,7 +1,9 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:face_detection_tflite/face_detection_tflite.dart' as fdt;
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/providers/settings_provider.dart';
@@ -10,12 +12,14 @@ import '../camera/target_profiling_screen.dart';
 import 'faces_provider.dart';
 
 class FaceDetailScreen extends ConsumerWidget {
+  static const String TAG = "FaceDetailScreen";
   final FaceEntity face;
 
   const FaceDetailScreen({super.key, required this.face});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    developer.log('[build] → Entry: targetName=${face.name}', name: TAG);
     final faceAsync = ref.watch(faceProvider(face.id!));
     final settings = ref.watch(settingsProvider);
     final theme = settings.theme;
@@ -65,7 +69,18 @@ class FaceDetailScreen extends ConsumerWidget {
                       _infoRow('THREAT LEVEL', _getThreatLevel(currentFace.riskScore ?? 0), theme, textColor, color: _getRiskColor(currentFace.riskScore ?? 0)),
                     ], theme, accentColor, surfaceColor),
                     const SizedBox(height: 24),
+                    _buildInfoSection('BEHAVIORAL DATA', [
+                      _infoRow('HOBBY', currentFace.hobby?.toUpperCase() ?? "UNKNOWN", theme, textColor),
+                      _infoRow('SECRET', currentFace.secret?.toUpperCase() ?? "UNKNOWN", theme, textColor, color: Colors.redAccent.withValues(alpha: 0.8)),
+                    ], theme, accentColor, surfaceColor),
+                    if (currentFace.recentHistory != null && currentFace.recentHistory!.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      _buildInfoSection('RECENT HISTORY', currentFace.recentHistory!.map((h) => _infoRow('LOG', h.toUpperCase(), theme, textColor)).toList(), theme, accentColor, surfaceColor),
+                    ],
+                    const SizedBox(height: 24),
                     _buildTraitsSection(currentFace, theme, accentColor),
+                    const SizedBox(height: 24),
+                    _buildOsintSection(currentFace, theme, accentColor, surfaceColor),
                     const SizedBox(height: 24),
                     _buildInfoSection('SYSTEM DATA', [
                       _infoRow('MODEL', currentFace.modelUsed.toUpperCase(), theme, textColor),
@@ -79,7 +94,10 @@ class FaceDetailScreen extends ConsumerWidget {
         );
       },
       loading: () => Scaffold(backgroundColor: backgroundColor, body: Center(child: CircularProgressIndicator(color: accentColor))),
-      error: (e, s) => Scaffold(backgroundColor: backgroundColor, body: Center(child: Text('ERROR: $e', style: AppTextStyles.warning(theme)))),
+      error: (e, s) {
+        developer.log('[build] → Error retrieving profile: $e', name: TAG, error: e);
+        return Scaffold(backgroundColor: backgroundColor, body: Center(child: Text('ERROR: $e', style: AppTextStyles.warning(theme))));
+      },
     );
   }
 
@@ -120,6 +138,7 @@ class FaceDetailScreen extends ConsumerWidget {
                     IconButton(
                     icon: Icon(Icons.edit, color: accentColor, size: 20),
                     onPressed: () {
+                      developer.log('[Interaction] → Redirecting to profile editor', name: TAG);
                       const size = Size(100, 100);
                       final detection = fdt.Detection(
                         boundingBox: const fdt.RectF(0, 0, 1, 1),
@@ -253,6 +272,76 @@ class FaceDetailScreen extends ConsumerWidget {
               ),
             );
           }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOsintSection(FaceEntity currentFace, AppTheme theme, Color accentColor, Color surfaceColor) {
+    if ((currentFace.socialLinks == null || currentFace.socialLinks!.isEmpty) &&
+        (currentFace.aliases == null || currentFace.aliases!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(width: 4, height: 16, color: AppColors.getSecondaryAccent(theme)),
+            const SizedBox(width: 8),
+            Text('DIGITAL FOOTPRINT // OSINT', style: AppTextStyles.hudStatus(theme).copyWith(color: AppColors.getSecondaryAccent(theme), fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: surfaceColor.withValues(alpha: 0.5),
+            border: Border(left: BorderSide(color: AppColors.getSecondaryAccent(theme).withValues(alpha: 0.3), width: 1)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (currentFace.digitalFootprintSummary != null) ...[
+                Text(
+                  currentFace.digitalFootprintSummary!.toUpperCase(),
+                  style: AppTextStyles.body(theme).copyWith(fontSize: 11, color: Colors.white, fontStyle: FontStyle.italic),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (currentFace.aliases != null && currentFace.aliases!.isNotEmpty) ...[
+                Text('KNOWN_ALIASES:', style: AppTextStyles.hudStatus(theme).copyWith(color: Colors.grey, fontSize: 9)),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 8,
+                  children: currentFace.aliases!.map((a) => Text(a.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'monospace'))).toList(),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (currentFace.socialLinks != null && currentFace.socialLinks!.isNotEmpty) ...[
+                Text('SOCIAL_CHANNELS:', style: AppTextStyles.hudStatus(theme).copyWith(color: Colors.grey, fontSize: 9)),
+                const SizedBox(height: 8),
+                ...currentFace.socialLinks!.map((link) => InkWell(
+                  onTap: () {
+                    developer.log('[Interaction] → Navigating to intercepted link: $link', name: TAG);
+                    launchUrl(Uri.parse(link));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.link, size: 12, color: AppColors.getSecondaryAccent(theme)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(link, style: TextStyle(color: AppColors.getSecondaryAccent(theme), fontSize: 10, decoration: TextDecoration.underline))),
+                      ],
+                    ),
+                  ),
+                )),
+              ],
+            ],
+          ),
         ),
       ],
     );

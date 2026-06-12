@@ -1,0 +1,2 @@
+json_key_file("") # Path to the json secret file - UNUSED in this open-source context
+package_name("com.logm1lo.ctos")

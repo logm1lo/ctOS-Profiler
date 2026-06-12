@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/settings_provider.dart';
 import '../../core/theme/colors.dart';
@@ -9,6 +12,9 @@ import '../shared/neon_button.dart';
 import 'camera_controller_provider.dart';
 import 'widgets/hud_overlay.dart';
 import 'widgets/scan_progress_overlay.dart';
+import 'widgets/glitchy_button.dart';
+import '../../domain/entities/face_entity.dart';
+import 'target_profiling_screen.dart';
 
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key});
@@ -18,16 +24,21 @@ class CameraScreen extends ConsumerStatefulWidget {
 }
 
 class _CameraScreenState extends ConsumerState<CameraScreen> {
+  static const String TAG = "CameraScreen";
+
   @override
   void initState() {
+    developer.log('[initState] → Entry', name: TAG);
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      developer.log('[initState] → Status: Requesting camera hardware initialization', name: TAG);
       ref.read(cameraProvider.notifier).initialize();
     });
   }
 
   @override
   void dispose() {
+    developer.log('[dispose] → Entry', name: TAG);
     super.dispose();
   }
 
@@ -58,7 +69,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => ref.read(cameraProvider.notifier).setCaptureMethod(CaptureMethod.live),
+                  onTap: () {
+                    developer.log('[CaptureMode] → Switching to LIVE_SCAN', name: TAG);
+                    ref.read(cameraProvider.notifier).setCaptureMethod(CaptureMethod.live);
+                  },
                   child: Center(
                     child: Text(
                       'LIVE SCAN',
@@ -72,7 +86,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               ),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => ref.read(cameraProvider.notifier).setCaptureMethod(CaptureMethod.still),
+                  onTap: () {
+                    developer.log('[CaptureMode] → Switching to STILL_CAP', name: TAG);
+                    ref.read(cameraProvider.notifier).setCaptureMethod(CaptureMethod.still);
+                  },
                   child: Center(
                     child: Text(
                       'STILL CAP',
@@ -91,8 +108,43 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
     );
   }
 
+  void _registerNewTarget(BuildContext context, WidgetRef ref) async {
+    developer.log('[_registerNewTarget] → Entry', name: TAG);
+    final cameraState = ref.read(cameraProvider);
+    if (cameraState.detectedFaces.isEmpty) {
+      developer.log('[_registerNewTarget] → Exit: No faces in frame, aborting', name: TAG);
+      return;
+    }
+    ref.read(cameraProvider.notifier).setMode(AppMode.register);
+    await ref.read(cameraProvider.notifier).captureAndProcess(context);
+    developer.log('[_registerNewTarget] → Exit', name: TAG);
+  }
+
+  void _refineTarget(BuildContext context, WidgetRef ref) async {
+    developer.log('[_refineTarget] → Entry', name: TAG);
+    final cameraState = ref.read(cameraProvider);
+    if (cameraState.matchedFace == null) {
+      developer.log('[_refineTarget] → Exit: No matched target to refine', name: TAG);
+      return;
+    }
+    ref.read(cameraProvider.notifier).setMode(AppMode.register, clearMatchedFace: false);
+    await ref.read(cameraProvider.notifier).captureAndProcess(
+      context,
+      initialStatus: 'REFINING PROFILE',
+      clearMatchedFace: false,
+    );
+    developer.log('[_refineTarget] → Exit', name: TAG);
+  }
+
+  void _performDeepSearch(BuildContext context, WidgetRef ref, FaceEntity? target) async {
+    developer.log('[_performDeepSearch] → Entry: targetName=${target?.name}', name: TAG);
+    await ref.read(cameraProvider.notifier).performDeepSearch(context, targetOverride: target);
+    developer.log('[_performDeepSearch] → Exit', name: TAG);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // developer.log('[build] → Entry', name: TAG);
     final cameraState = ref.watch(cameraProvider);
     final settings = ref.watch(settingsProvider);
     final theme = settings.theme;
@@ -116,8 +168,87 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               child: CircularProgressIndicator(color: accentColor),
             ),
 
-          // HUD Layer (Visuals + Target Buttons)
+          // HUD Layer (Visuals + Non-interactive overlays)
           const HudOverlay(),
+
+          // Interactive Target Overlays (Banner + Buttons)
+          if (cameraState.scanStatus == 'NEW TARGET DETECTED')
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 200),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GlitchyButton(
+                      onPressed: () => _registerNewTarget(context, ref),
+                      label: 'REGISTER TARGET?',
+                    ),
+                    const SizedBox(height: 12),
+                    GlitchyButton(
+                      onPressed: () {
+                         developer.log('[Interaction] → Requesting deep OSINT for unknown face', name: TAG);
+                         ref.read(cameraProvider.notifier).queryUnknownFace(context);
+                      },
+                      label: 'UNRESOLVED_ID: QUERY?',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          if (cameraState.matchedFace != null && !cameraState.isScanning)
+            Positioned(
+              bottom: 240,
+              left: 20,
+              right: 20,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: theme == AppTheme.watchDogs
+                          ? Colors.white.withValues(alpha: 0.9)
+                          : AppColors.getSurface(theme).withValues(alpha: 0.8),
+                      border: Border.all(color: accentColor, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: accentColor.withValues(alpha: 0.3), blurRadius: 10)
+                      ]
+                    ),
+                    child: Text(
+                      'MATCH: ${cameraState.matchedFace!.name.toUpperCase()}',
+                      style: AppTextStyles.hudStatus(theme).copyWith(
+                        color: theme == AppTheme.watchDogs ? Colors.black : accentColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: GlitchyButton(
+                          onPressed: () => _refineTarget(context, ref),
+                          label: 'REFINE PROFILE?',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GlitchyButton(
+                          onPressed: () => _performDeepSearch(context, ref, cameraState.matchedFace),
+                          label: 'DEEP SEARCH',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
 
           // Scan Progress Overlay
           if (cameraState.isScanning)
@@ -129,33 +260,73 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                   : (cameraState.scanStatus == 'DONE' ? 'NO MATCH FOUND' : null),
             ),
 
-          // Top Controls (Mode & Model)
+          // Top Header & Diagnostics
           Positioned(
-            top: 110,
-            left: 20,
-            right: 20,
-            child: Row(
+            top: 50,
+            left: 0,
+            right: 0,
+            child: Column(
               children: [
-                Expanded(
-                  child: NeonButton(
-                    label: cameraState.mode == AppMode.match ? 'MODE: MATCH' : 'MODE: REG',
-                    onPressed: () {
-                      debugPrint('ctOS_LOG: Mode button pressed');
-                      ref.read(cameraProvider.notifier).toggleMode();
-                    },
-                    isSecondary: true,
-                  ),
+                Text(
+                  'CAPTURE TARGET',
+                  style: AppTextStyles.title(theme).copyWith(fontSize: 18, color: accentColor),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: NeonButton(
-                    label: cameraState.modelType == FaceModel.faceNet ? 'MODEL: FACENET' : 'MODEL: MOBILE',
-                    onPressed: () {
-                      debugPrint('ctOS_LOG: Model button pressed');
-                      ref.read(cameraProvider.notifier).toggleModel();
-                    },
-                    isSecondary: true,
+                if (settings.showDiagnostics) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'FPS: ${cameraState.fps.toStringAsFixed(1)} | PROC: ${cameraState.processTime.toInt()}ms',
+                    style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor.withValues(alpha: 0.7)),
                   ),
+                ],
+                const SizedBox(height: 8),
+                Container(
+                  height: 1,
+                  width: 200,
+                  color: accentColor.withValues(alpha: 0.5),
+                ),
+              ],
+            ),
+          ),
+
+          // Top Horizontal Controls - Clean Icon-based UX
+          Positioned(
+            top: 105,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _TidyIconButton(
+                  icon: cameraState.mode == AppMode.match ? Icons.person_search : Icons.person_add,
+                  label: cameraState.mode == AppMode.match ? 'MATCH' : 'ENROLL',
+                  onPressed: () {
+                    developer.log('[ModeControl] → Toggling app mode', name: TAG);
+                    ref.read(cameraProvider.notifier).toggleMode();
+                  },
+                  isActive: false,
+                ),
+                const SizedBox(width: 16),
+                _TidyIconButton(
+                  icon: Icons.memory,
+                  label: cameraState.modelType == FaceModel.faceNet ? 'FACENET' : 'MOBILE',
+                  onPressed: () {
+                    developer.log('[ModelControl] → Toggling TFLite backend', name: TAG);
+                    ref.read(cameraProvider.notifier).toggleModel();
+                  },
+                  isActive: false,
+                ),
+                const SizedBox(width: 16),
+                _TidyIconButton(
+                  icon: cameraState.isPoiTrackerActive ? Icons.radar : Icons.radio_button_off,
+                  label: 'POI',
+                  onPressed: () {
+                    developer.log('[TrackerControl] → Toggling automated POI response', name: TAG);
+                    ref.read(cameraProvider.notifier).togglePoiTracker();
+                    HapticFeedback.mediumImpact();
+                  },
+                  isActive: cameraState.isPoiTrackerActive,
+                  activeColor: Colors.redAccent,
                 ),
               ],
             ),
@@ -163,7 +334,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
           // Mode Selection & Bottom Controls
           Positioned(
-            bottom: 40,
+            bottom: 30,
             left: 0,
             right: 0,
             child: Column(
@@ -171,27 +342,45 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
               children: [
                 _buildCaptureMethodSlider(cameraState, theme),
                 const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _IconButton(
-                      icon: Icons.image,
-                      onPressed: () {
-                        ref.read(cameraProvider.notifier).pickAndProcess(context);
-                      },
-                    ),
-                    _ShutterButton(
-                      onPressed: () {
-                        ref.read(cameraProvider.notifier).captureAndProcess(context);
-                      },
-                    ),
-                    _IconButton(
-                      icon: Icons.flip_camera_android,
-                      onPressed: () {
-                        ref.read(cameraProvider.notifier).toggleCamera();
-                      },
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _IconButton(
+                        icon: Icons.history,
+                        onPressed: () {
+                           developer.log('[Interaction] → History access requested', name: TAG);
+                        },
+                      ),
+                      _IconButton(
+                        icon: Icons.image,
+                        onPressed: () {
+                          developer.log('[Interaction] → File picker requested', name: TAG);
+                          ref.read(cameraProvider.notifier).pickAndProcess(context);
+                        },
+                      ),
+                      _ShutterButton(
+                        onPressed: () {
+                          developer.log('[HardwareControl] → Shutter triggered', name: TAG);
+                          ref.read(cameraProvider.notifier).captureAndProcess(context);
+                        },
+                      ),
+                      _IconButton(
+                        icon: Icons.flip_camera_android,
+                        onPressed: () {
+                          developer.log('[HardwareControl] → Switching sensor lens', name: TAG);
+                          ref.read(cameraProvider.notifier).toggleCamera();
+                        },
+                      ),
+                      _IconButton(
+                        icon: Icons.settings,
+                        onPressed: () {
+                           developer.log('[Interaction] → Secondary settings requested', name: TAG);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -199,16 +388,112 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
 
           // Close button
           Positioned(
-            top: 50,
-            right: 20,
+            top: 45,
+            right: 15,
             child: IconButton(
-              icon: Icon(Icons.close, color: accentColor, size: 30),
+              icon: Icon(Icons.close, color: accentColor, size: 28),
               onPressed: () {
+                developer.log('[Interaction] → Terminal screen closure', name: TAG);
                 Navigator.pop(context);
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TidyIconButton extends ConsumerWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  final bool isActive;
+  final Color? activeColor;
+
+  const _TidyIconButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.isActive = false,
+    this.activeColor,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final theme = settings.theme;
+    final baseAccent = AppColors.getAccent(theme);
+    final color = isActive ? (activeColor ?? baseAccent) : baseAccent;
+
+    return GestureDetector(
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isActive ? color.withValues(alpha: 0.2) : Colors.transparent,
+              border: Border.all(color: color, width: 1.5),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label.toUpperCase(),
+            style: AppTextStyles.hudStatus(theme).copyWith(
+              fontSize: 8,
+              color: color,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PoiToggle extends ConsumerWidget {
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  const _PoiToggle({required this.isActive, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final theme = settings.theme;
+    final accentColor = AppColors.getAccent(theme);
+
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.redAccent.withValues(alpha: 0.2) : accentColor.withValues(alpha: 0.1),
+          border: Border.all(color: isActive ? Colors.redAccent : accentColor, width: 1),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute icon and text
+          children: [
+            Icon(
+              isActive ? Icons.radar : Icons.radio_button_off,
+              color: isActive ? Colors.redAccent : accentColor,
+              size: 14,
+            ),
+            Text(
+              'POI TRACKER',
+              style: AppTextStyles.hudStatus(theme).copyWith(
+                fontSize: 9,
+                color: isActive ? Colors.redAccent : accentColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -247,15 +532,17 @@ class _ShutterButton extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final accentColor = AppColors.getAccent(settings.theme);
     final isHack = settings.shutterStyle == ShutterStyle.hack;
+    final cameraState = ref.watch(cameraProvider);
+    final isRegister = cameraState.mode == AppMode.register;
 
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        width: 80,
-        height: 80,
+        width: 70, // Reduced from 80
+        height: 70, // Reduced from 80
         decoration: BoxDecoration(
           shape: isHack ? BoxShape.rectangle : BoxShape.circle,
-          border: Border.all(color: accentColor, width: 4),
+          border: Border.all(color: accentColor, width: 3),
           boxShadow: [
             if (settings.theme == AppTheme.neonBlack)
               BoxShadow(
@@ -268,12 +555,12 @@ class _ShutterButton extends ConsumerWidget {
         child: Center(
           child: isHack
               ? Text(
-                  'HACK',
+                  isRegister ? 'ENROLL' : 'HACK',
                   style: TextStyle(
                     color: accentColor,
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    letterSpacing: 2,
+                    fontSize: 16,
+                    letterSpacing: 1,
                   ),
                 )
               : Container(

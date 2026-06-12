@@ -1,0 +1,8 @@
+default_platform(:android)
+
+platform :android do
+  desc "Capture screenshots"
+  lane :screenshots do
+    capture_android_screenshots
+  end
+end

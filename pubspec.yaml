@@ -19,12 +19,24 @@ dependencies:
   path: ^1.8.3
   file_picker: ^8.0.0
   shared_preferences: ^2.5.5
-
+  http: ^1.2.0
+  url_launcher: ^6.2.4
+  permission_handler: ^11.3.1
+  flutter_nfc_kit: ^3.4.2
+  flutter_blue_plus: ^1.31.15
+  network_info_plus: ^6.0.0
+  shelf: ^1.4.1
+  shelf_router: ^1.1.4
+  device_info_plus: ^12.4.0
+  package_info_plus: ^9.0.1
+  battery_plus: ^7.0.0
+  geolocator: ^14.0.2
+  flutter_lints: 3.0.0
+  lints: 3.0.0
+  cellular_info: 1.0.6
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
-
 flutter:
   uses-material-design: true
   assets:

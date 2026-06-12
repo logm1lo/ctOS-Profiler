@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/text_styles.dart';
+import '../../../domain/entities/face_entity.dart';
 import '../camera_controller_provider.dart';
 import 'face_bbox_painter.dart';
 import 'face_target_guide.dart';
@@ -98,158 +99,50 @@ class _HudOverlayState extends ConsumerState<HudOverlay> with TickerProviderStat
                 isFrontCamera: cameraState.isFrontCamera,
                 accentColor: accentColor,
                 privacyMode: settings.privacyMode,
+                isPoiTrackerActive: cameraState.isPoiTrackerActive,
               ),
             ),
           ),
 
-        // Register Target Button (Center Screen)
-        if (cameraState.scanStatus == 'NEW TARGET DETECTED')
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 200),
-              child: GlitchyButton(
-                onPressed: () => _registerNewTarget(context, ref),
-                label: 'REGISTER TARGET?',
-              ),
-            ),
-          ),
-
-        // Match Info (Center Screen)
-        if (cameraState.matchedFace != null && !cameraState.isScanning)
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: theme == AppTheme.watchDogs
-                        ? Colors.white.withValues(alpha: 0.9)
-                        : AppColors.getSurface(theme).withValues(alpha: 0.8),
-                    border: Border.all(color: accentColor, width: 1.5),
-                  ),
-                  child: Text(
-                    'MATCH: ${cameraState.matchedFace!.name.toUpperCase()}',
-                    style: AppTextStyles.hudStatus(theme).copyWith(
-                      color: theme == AppTheme.watchDogs ? Colors.black : accentColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                GlitchyButton(
-                  onPressed: () {
-                    debugPrint('ctOS_LOG: Refine Profile button pressed');
-                    _refineTarget(context, ref);
-                  },
-                  label: 'REFINE PROFILE?',
-                ),
-              ],
-            ),
-          ),
-
-        // Layer 4: Status Text
+        // Layer 4: Consolidated Status Bar (Above Slider)
         Positioned(
-          bottom: 120,
+          bottom: 140,
           left: 20,
-          child: Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: accentColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text('LIVE FEED', style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor)),
-            ],
-          ),
-        ),
-        Positioned(
-          bottom: 120,
           right: 20,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('REC', style: AppTextStyles.hudStatus(theme).copyWith(color: Colors.red)),
-              const SizedBox(width: 4),
-              const Icon(Icons.circle, color: Colors.red, size: 12),
-            ],
-          ),
-        ),
-
-        // Top Bar
-        Positioned(
-          top: 50,
-          left: 60,
-          right: 20, // Adjusted to make room for X
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      'CAPTURE TARGET',
-                      style: AppTextStyles.title(theme).copyWith(fontSize: 18, color: accentColor),
-                      textAlign: TextAlign.center,
+              Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 1,
-                      width: double.infinity,
-                      color: accentColor.withValues(alpha: 0.5),
-                    ),
-                    if (settings.showDiagnostics) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'FPS: ${cameraState.fps.toStringAsFixed(1)} | PROC: ${cameraState.processTime.toInt()}ms',
-                        style: AppTextStyles.hudStatus(theme).copyWith(fontSize: 10, color: accentColor.withValues(alpha: 0.7)),
-                      ),
-                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  Text('LIVE FEED', style: AppTextStyles.hudStatus(theme).copyWith(color: accentColor, fontSize: 9)),
+                  if (cameraState.isPoiTrackerActive) ...[
+                    const SizedBox(width: 8),
+                    Container(width: 1, height: 10, color: accentColor.withValues(alpha: 0.3)),
+                    const SizedBox(width: 8),
+                    Text('POI_ACTIVE', style: AppTextStyles.hudStatus(theme).copyWith(color: Colors.greenAccent, fontSize: 9, fontWeight: FontWeight.bold)),
                   ],
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: Icon(Icons.close, color: accentColor, size: 24),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+              Row(
+                children: [
+                  Text('REC', style: AppTextStyles.hudStatus(theme).copyWith(color: Colors.red, fontSize: 9)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.circle, color: Colors.red, size: 6),
+                ],
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  Future<void> _registerNewTarget(BuildContext context, WidgetRef ref) async {
-    final cameraState = ref.read(cameraProvider);
-    if (cameraState.detectedFaces.isEmpty) return;
-
-    // Set mode to register before capturing
-    ref.read(cameraProvider.notifier).setMode(AppMode.register);
-
-    // To register, we need a high-quality capture
-    await ref.read(cameraProvider.notifier).captureAndProcess(context);
-  }
-
-  Future<void> _refineTarget(BuildContext context, WidgetRef ref) async {
-    final cameraState = ref.read(cameraProvider);
-    if (cameraState.matchedFace == null) return;
-
-    // Set mode to register to trigger the profiling screen after capture
-    // Preserve the matchedFace so it can be passed to the profiling screen!
-    ref.read(cameraProvider.notifier).setMode(AppMode.register, clearMatchedFace: false);
-
-    // captureAndProcess will navigate to profiling screen because mode is register
-    await ref.read(cameraProvider.notifier).captureAndProcess(
-      context,
-      initialStatus: 'REFINING PROFILE',
-      clearMatchedFace: false,
     );
   }
 }

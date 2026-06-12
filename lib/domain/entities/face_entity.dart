@@ -9,7 +9,7 @@ class FaceEntity {
   final Uint8List? photoBytes;
   final int timestamp;
 
-  // New Watch Dogs style profiling data
+  // Watch Dogs style profiling data
   final int? age;
   final String? occupation;
   final String? incomeLevel;
@@ -18,6 +18,18 @@ class FaceEntity {
   final String? birthDate;
   final double? height;
   final double? weight;
+
+  // New Flavor Data
+  final String? hobby;
+  final String? secret;
+  final List<String>? recentHistory;
+
+  // OSINT Data
+  final List<String>? socialLinks;
+  final List<String>? aliases;
+  final String? digitalFootprintSummary;
+  final Map<String, dynamic>? extraMetadata;
+  final bool isPoi;
 
   FaceEntity({
     this.id,
@@ -35,6 +47,14 @@ class FaceEntity {
     this.birthDate,
     this.height,
     this.weight,
+    this.hobby,
+    this.secret,
+    this.recentHistory,
+    this.socialLinks,
+    this.aliases,
+    this.digitalFootprintSummary,
+    this.extraMetadata,
+    this.isPoi = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -54,6 +74,13 @@ class FaceEntity {
       'birth_date': birthDate,
       'height': height,
       'weight': weight,
+      'hobby': hobby,
+      'secret': secret,
+      'recent_history': recentHistory?.join('|'),
+      'social_links': socialLinks?.join('|'),
+      'aliases': aliases?.join('|'),
+      'digital_footprint_summary': digitalFootprintSummary,
+      'is_poi': isPoi ? 1 : 0,
     };
   }
 
@@ -89,6 +116,13 @@ class FaceEntity {
       birthDate: map['birth_date'],
       height: map['height']?.toDouble(),
       weight: map['weight']?.toDouble(),
+      hobby: map['hobby'],
+      secret: map['secret'],
+      recentHistory: (map['recent_history'] as String?)?.split('|').where((s) => s.isNotEmpty).toList(),
+      socialLinks: (map['social_links'] as String?)?.split('|').where((s) => s.isNotEmpty).toList(),
+      aliases: (map['aliases'] as String?)?.split('|').where((s) => s.isNotEmpty).toList(),
+      digitalFootprintSummary: map['digital_footprint_summary'],
+      isPoi: (map['is_poi'] ?? 0) == 1,
     );
   }
 }
