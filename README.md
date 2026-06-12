@@ -107,8 +107,6 @@ Ensure `ndk.dir` or `sdk.dir` is correctly set in `local.properties`. Version **
 
 **FOR RESEARCH AND EDUCATIONAL PURPOSES ONLY.**
 
-ctOS-Profiler is a functional offensive security tool. It handles sensitive biometric data (PII) and utilizes techniques often flagged as malicious by mobile operating systems (BLE Spamming, Keylogging, Forced Pairing). Use only on hardware you own or have explicit permission to test.
-
 ## Code Credits & Acknowledgments
 
 This project integrates and adapts core logic from the following groundbreaking security research and open-source projects:
