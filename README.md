@@ -103,13 +103,13 @@ If you see errors regarding Android Gradle Plugin (AGP) version 8.11.1, ensure y
 ### NDK Path Issues
 Ensure `ndk.dir` or `sdk.dir` is correctly set in `local.properties`. Version **25.1.8937393** is strictly required for certain native exploit engines to compile correctly.
 
-## ⚠️ Critical Security Disclaimer
+## ⚠Critical Security Disclaimer
 
 **FOR RESEARCH AND EDUCATIONAL PURPOSES ONLY.**
 
 ctOS-Profiler is a functional offensive security tool. It handles sensitive biometric data (PII) and utilizes techniques often flagged as malicious by mobile operating systems (BLE Spamming, Keylogging, Forced Pairing). Use only on hardware you own or have explicit permission to test.
 
-## 🤝 Code Credits & Acknowledgments
+## Code Credits & Acknowledgments
 
 This project integrates and adapts core logic from the following groundbreaking security research and open-source projects:
 
@@ -117,6 +117,6 @@ This project integrates and adapts core logic from the following groundbreaking 
 *   **Bluetooth-LE-Spam:** Native advertising generators adapted from [simondankelmann/Bluetooth-LE-Spam](https://github.com/simondankelmann/Bluetooth-LE-Spam).
 *   **WhisperPair:** Fast Pair exploit logic ported from [zalexdev/wpair-app](https://github.com/zalexdev/wpair-app).
 
-## 📜 License
+## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
